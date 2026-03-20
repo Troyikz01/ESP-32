@@ -1497,3 +1497,67 @@ tr.session-current .session-toggle {
 tr.session-current .group-label {
   color: var(--thermal-primary);
 }
+
+/* ============================================================
+   ESP32 CONNECTION STATUS
+   ============================================================ */
+.esp-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 24px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-family: 'Space Mono', monospace;
+  transition: all 0.4s ease;
+  border: 1px solid;
+}
+
+.esp-status.connected {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: #166534;
+  color: #4ade80;
+}
+
+.esp-status.disconnected {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: #7c1111;
+  color: #fca5a5;
+  animation: disconnected-pulse 1.5s ease-in-out infinite;
+}
+
+.esp-status.stale {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: #7c3a0f;
+  color: #fdba74;
+}
+
+.esp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.4s ease;
+}
+
+.esp-status.connected .esp-dot {
+  background: #22c55e;
+  box-shadow: 0 0 10px #22c55e;
+  animation: blink 1.3s ease-in-out infinite;
+}
+
+.esp-status.disconnected .esp-dot {
+  background: #ef4444;
+  box-shadow: 0 0 10px #ef4444;
+}
+
+.esp-status.stale .esp-dot {
+  background: #f97316;
+  box-shadow: 0 0 10px #f97316;
+}
+
+@keyframes disconnected-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

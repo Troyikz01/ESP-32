@@ -122,8 +122,22 @@ async function fetchLatest() {
   hiPill.className = 'status-pill ' + hiClass;
 
   // Last update timestamp
-  document.querySelector('.last-update').textContent =
-    'Last: ' + new Date(data.created_at).toLocaleTimeString();
+  const lastTime = new Date(data.created_at);
+  document.querySelector('.last-update').textContent = 'Last: ' + lastTime.toLocaleTimeString();
+
+  // ESP32 connection status — connected if last reading < 15 seconds ago
+  const secondsAgo = (Date.now() - lastTime.getTime()) / 1000;
+  const espStatus = document.getElementById('espStatus');
+  const espLabel  = document.getElementById('espLabel');
+  if (espStatus && espLabel) {
+    if (secondsAgo < 5) {
+      espStatus.className = 'esp-status connected';
+      espLabel.textContent = 'ESP32 CONNECTED';
+    } else {
+      espStatus.className = 'esp-status disconnected';
+      espLabel.textContent = 'ESP32 OFFLINE';
+    }
+  }
 
   // Thermal theme
   updateThermalState(t, h);
@@ -444,6 +458,9 @@ fetchLatest();
 fetchCounts();
 fetchChartData();
 fetchTable();
+
+// Poll connection status every 10s in case no new readings come in
+setInterval(fetchLatest, 10000);
 
 // ============================================================
 // DOWNLOAD NAV
