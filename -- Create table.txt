@@ -1,0 +1,23 @@
+-- Create table
+create table public.sensor_readings (
+  id          bigserial primary key,
+  temperature double precision not null,
+  humidity    double precision not null,
+  created_at  timestamptz default now()
+);
+
+-- Enable Row Level Security
+alter table public.sensor_readings enable row level security;
+
+-- Allow ESP32 to insert data
+create policy "Allow insert from ESP32"
+on public.sensor_readings for insert
+with check (true);
+
+-- Allow dashboard to read data
+create policy "Allow read for dashboard"
+on public.sensor_readings for select
+using (true);
+
+-- Enable Realtime
+alter publication supabase_realtime add table public.sensor_readings;
