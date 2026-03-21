@@ -8,24 +8,24 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="thermal-normal">
+<body class="thermal-normal theme-dark">
 
   <!-- Navigation -->
   <nav>
     <div class="nav-left">
       <div class="logo">ESP32 DASHBOARD</div>
       <div class="live-badge">
-        <span class="dot"></span>
-        LIVE
+        <span class="dot"></span>LIVE
       </div>
       <div class="esp-status connected" id="espStatus">
         <span class="esp-dot" id="espDot"></span>
         <span id="espLabel">ESP32 CONNECTED</span>
       </div>
-      <!-- Heat Stress Level Bar -->
+    </div>
+
+    <div class="nav-center">
       <div class="gauge-widget" id="gaugeWidget">
         <div class="gauge-title">HEAT STRESS</div>
         <div class="gauge-bar-track">
@@ -41,7 +41,33 @@
         </div>
         <div class="gauge-current" id="gaugeLabel">● NORMAL</div>
       </div>
+      <div class="theme-dropdown" id="themeDropdown">
+        <button class="theme-dot-trigger" id="themeToggleBtn" title="Change Theme"></button>
+        <div class="theme-dropdown-menu" id="themeMenu">
+          <div class="theme-menu-title">THEME</div>
+          <div class="theme-dots-grid">
+            <button class="theme-dot active" data-theme="dark"     title="Dark"     style="background:linear-gradient(135deg,#0a0d14 50%,#22c55e)"></button>
+            <button class="theme-dot"        data-theme="light"    title="Light"    style="background:linear-gradient(135deg,#e8edf5 50%,#4ade80)"></button>
+            <button class="theme-dot"        data-theme="ocean"    title="Ocean"    style="background:linear-gradient(135deg,#020d1a 50%,#00d4ff)"></button>
+            <button class="theme-dot"        data-theme="forest"   title="Forest"   style="background:linear-gradient(135deg,#050f08 50%,#22c55e)"></button>
+            <button class="theme-dot"        data-theme="midnight" title="Midnight" style="background:linear-gradient(135deg,#0d0514 50%,#c084fc)"></button>
+            <button class="theme-dot"        data-theme="sunset"   title="Sunset"   style="background:linear-gradient(135deg,#1a0a00 50%,#ff6b35)"></button>
+            <button class="theme-dot"        data-theme="rose"     title="Rose"     style="background:linear-gradient(135deg,#140a10 50%,#fb7185)"></button>
+            <button class="theme-dot"        data-theme="arctic"   title="Arctic"   style="background:linear-gradient(135deg,#040d14 50%,#a5f3fc)"></button>
+            <button class="theme-dot"        data-theme="volcano"  title="Volcano"  style="background:linear-gradient(135deg,#100000 50%,#ff4500)"></button>
+            <button class="theme-dot"        data-theme="galaxy"   title="Galaxy"   style="background:linear-gradient(135deg,#020008 50%,#818cf8)"></button>
+            <button class="theme-dot"        data-theme="aurora"   title="Aurora"   style="background:linear-gradient(135deg,#001a0f,#00ff88,#a855f7)"></button>
+            <button class="theme-dot"        data-theme="neon"     title="Neon"     style="background:linear-gradient(135deg,#000814,#f72585,#00f5d4)"></button>
+            <button class="theme-dot"        data-theme="copper"   title="Copper"   style="background:linear-gradient(135deg,#0d0500,#b87333,#ffd700)"></button>
+            <button class="theme-dot"        data-theme="cyber"    title="Cyber"    style="background:linear-gradient(135deg,#000d1a,#00ffff,#ff00ff)"></button>
+            <button class="theme-dot"        data-theme="sakura"   title="Sakura"   style="background:linear-gradient(135deg,#1a0010,#ff80ab,#ffe0f0)"></button>
+            <button class="theme-dot"        data-theme="lava"     title="Lava"     style="background:linear-gradient(135deg,#0a0000,#ff2200,#ffaa00)"></button>
+          </div>
+          <div class="theme-name-label" id="themeNameLabel">Dark</div>
+        </div>
+      </div>
     </div>
+
     <div class="nav-right">
       <div class="wifi-widget">
         <div class="wifi-bars excellent">
@@ -49,96 +75,85 @@
         </div>
         <span class="wifi-label">Excellent</span>
       </div>
-      <span class="last-update">Last: 7:40:50 AM</span>
-      <div class="live-badge" id="thermalLabel" style="font-size:0.7rem;">🟢 Normal</div>
-      <button class="btn-sound sound-on" id="soundBtn">
-        <span>🔊</span> Sound
-      </button>
+      <span class="last-update" id="lastUpdate">Last: —</span>
+      <div class="live-badge thermal-badge" id="thermalLabel">🟢 Normal</div>
+      <button class="btn-sound sound-on" id="soundBtn"><span>🔊</span> Sound</button>
     </div>
   </nav>
 
-  <!-- Alert Banner (hidden by default) -->
+  <!-- Alert Banner -->
   <div id="alert-banner">
     <span>⚠️</span>
     <span>HEAT WARNING: Temperature exceeds safe limits! Take immediate action.</span>
   </div>
 
-  <!-- Main Content -->
+  <!-- Main -->
   <main>
     <div class="section-label">Current Readings</div>
-
-    <!-- Stat Cards -->
     <div class="cards">
       <div class="card temp-card">
         <div class="card-label">Temperature</div>
-        <div class="card-value" id="tempValue">29.8<span>°C</span></div>
-        <div class="card-sub">Range: <b>18-32°C</b></div>
-        <span class="status-pill status-warn" id="tempStatus">Warm</span>
+        <div class="card-value" id="tempValue">—<span>°C</span></div>
+        <div class="card-sub">Range: <b>18–32°C</b></div>
+        <span class="status-pill status-ok" id="tempStatus">—</span>
       </div>
-
       <div class="card humi-card">
         <div class="card-label">Humidity</div>
-        <div class="card-value" id="humiValue">72.0<span>%</span></div>
-        <div class="card-sub">Range: <b>40-70%</b></div>
-        <span class="status-pill status-warn" id="humiStatus">Humid</span>
+        <div class="card-value" id="humiValue">—<span>%</span></div>
+        <div class="card-sub">Range: <b>40–70%</b></div>
+        <span class="status-pill status-ok" id="humiStatus">—</span>
       </div>
-
       <div class="card heat-card">
         <div class="card-label">Heat Index</div>
-        <div class="card-value" id="heatValue">35.0<span>°C</span></div>
+        <div class="card-value" id="heatValue">—<span>°C</span></div>
         <div class="card-sub">Feels like</div>
-        <span class="status-pill status-hot" id="heatStatus">Danger Zone</span>
+        <span class="status-pill status-ok" id="heatStatus">—</span>
       </div>
-
       <div class="card total-card">
         <div class="card-label">Total Readings</div>
-        <div class="card-value">12,847</div>
+        <div class="card-value" id="totalReadings">—</div>
         <div class="card-sub">All time</div>
       </div>
-
       <div class="card today-card">
         <div class="card-label">Readings Today</div>
-        <div class="card-value">1,284</div>
+        <div class="card-value" id="todayReadings">—</div>
         <div class="card-sub">Every 3 seconds</div>
       </div>
     </div>
 
-    <!-- Charts -->
     <div class="section-label">History</div>
     <div class="charts-row">
       <div class="chart-card">
         <div class="chart-title">
           Temperature History
           <div class="chart-legend">
-            <div class="legend-item"><span class="legend-dot" style="background: #f97316;"></span> Temp</div>
-            <div class="legend-item"><span class="legend-dot" style="background: #e11d48;"></span> Heat Index</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span> Temp</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#e11d48"></span> Heat Index</div>
           </div>
         </div>
         <div class="chart-wrap" id="tempChart"></div>
       </div>
-
       <div class="chart-card">
         <div class="chart-title">
           Humidity History
           <div class="chart-legend">
-            <div class="legend-item"><span class="legend-dot" style="background: #38bdf8;"></span> Humidity</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#38bdf8"></span> Humidity</div>
           </div>
         </div>
         <div class="chart-wrap" id="humiChart"></div>
       </div>
     </div>
 
-    <!-- Combined Chart -->
-    <div class="charts-row" style="grid-template-columns: 1fr;">
+    <div class="charts-row" style="grid-template-columns:1fr; margin-top:0;">
       <div class="chart-card">
         <div class="chart-title">
           Temperature & Humidity Overview
           <div class="chart-legend">
-            <div class="legend-item"><span class="legend-dot" style="background: #f97316;"></span> Temperature</div>
-            <div class="legend-item"><span class="legend-dot" style="background: #38bdf8;"></span> Humidity</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span> Temp (°C)</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#38bdf8"></span> Humidity (%)</div>
           </div>
         </div>
-        <div class="chart-wrap" id="combinedChart" style="height: 220px;"></div>
+        <div class="chart-wrap" id="combinedChart" style="height:220px;"></div>
       </div>
     </div>
 
@@ -148,7 +163,6 @@
         <div class="table-title">Reading History</div>
         <div class="table-count" id="tableCount">Showing 0 entries</div>
       </div>
-      <!-- Download Nav -->
       <div class="dl-nav">
         <div class="dl-nav-left">
           <select class="dl-select" id="dlSelect">
@@ -175,69 +189,9 @@
               <th>Status</th>
             </tr>
           </thead>
-          <tbody>
-            <tr class="session-header">
-              <td colspan="5">
-                <span class="session-toggle">▶</span>
-                <span class="group-label">Today — Session 1</span>
-                <span class="group-count">8 readings</span>
-                <button class="btn-dl-session">⬇ CSV</button>
-              </td>
-            </tr>
-            <tr>
-              <td>07:40:50 AM</td>
-              <td class="td-temp">29.8°C</td>
-              <td class="td-humi">72.0%</td>
-              <td class="td-heat">35.0°C</td>
-              <td><span class="status-pill status-warn">Warm</span></td>
-            </tr>
-            <tr>
-              <td>07:40:47 AM</td>
-              <td class="td-temp">29.6°C</td>
-              <td class="td-humi">71.5%</td>
-              <td class="td-heat">34.8°C</td>
-              <td><span class="status-pill status-warn">Warm</span></td>
-            </tr>
-            <tr>
-              <td>07:40:44 AM</td>
-              <td class="td-temp">29.4°C</td>
-              <td class="td-humi">71.0%</td>
-              <td class="td-heat">34.5°C</td>
-              <td><span class="status-pill status-ok">Normal</span></td>
-            </tr>
-            <tr>
-              <td>07:40:41 AM</td>
-              <td class="td-hot">36.2°C</td>
-              <td class="td-humi">73.2%</td>
-              <td class="td-hot">42.1°C</td>
-              <td><span class="status-pill status-hot">Danger</span></td>
-            </tr>
-            <tr class="session-header">
-              <td colspan="5">
-                <span class="session-toggle">▶</span>
-                <span class="group-label">Yesterday — Session 3</span>
-                <span class="group-count">12 readings</span>
-                <button class="btn-dl-session">⬇ CSV</button>
-              </td>
-            </tr>
-            <tr class="row-old">
-              <td>11:30:22 PM</td>
-              <td class="td-cold">16.8°C</td>
-              <td class="td-humi">65.0%</td>
-              <td class="td-cold">16.2°C</td>
-              <td><span class="status-pill status-cold">Cool</span></td>
-            </tr>
-            <tr class="row-old">
-              <td>11:30:19 PM</td>
-              <td class="td-freezing">8.5°C</td>
-              <td class="td-humi">62.0%</td>
-              <td class="td-freezing">7.2°C</td>
-              <td><span class="status-pill status-freezing">Freezing</span></td>
-            </tr>
-          </tbody>
+          <tbody id="tableBody"></tbody>
         </table>
       </div>
-      <!-- Table Toolbar -->
       <div class="table-toolbar">
         <div class="toolbar-left">
           <div class="filter-dropdown">
@@ -253,10 +207,9 @@
         </div>
         <div class="toolbar-right">
           <button class="btn-export-table" id="exportTableBtn">⬇ EXPORT CSV</button>
-          <button class="btn-clear-log" id="clearLogBtn">✕ CLEAR LOG</button>
+          <button class="btn-clear-log"    id="clearLogBtn">✕ CLEAR LOG</button>
         </div>
       </div>
-      <!-- Stats Bar -->
       <div class="stats-bar">
         <span>LOGGED <b id="statLogged">0</b></span>
         <span>MIN TEMP <b id="statMin" class="td-temp">—</b></span>
@@ -266,9 +219,7 @@
     </div>
   </main>
 
-  <!-- Toast -->
-  <div id="toast">✓ Data exported successfully!</div>
-
+  <div id="toast">✓ Done</div>
   <script src="script.js"></script>
 </body>
 </html>
