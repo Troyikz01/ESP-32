@@ -1561,3 +1561,85 @@ tr.session-current .group-label {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+
+/* ============================================================
+   HEAT STRESS GAUGE — Horizontal Bar
+   ============================================================ */
+.gauge-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 12px;
+  min-width: 220px;
+  transition: all 0.4s ease;
+  cursor: default;
+}
+
+.gauge-widget:hover {
+  border-color: var(--thermal-primary);
+  box-shadow: 0 0 15px var(--thermal-glow);
+}
+
+.gauge-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
+.gauge-bar-track {
+  position: relative;
+  display: flex;
+  height: 8px;
+  border-radius: 6px;
+  overflow: visible;
+  gap: 2px;
+}
+
+.gauge-segment {
+  flex: 1;
+  height: 100%;
+  border-radius: 3px;
+  opacity: 0.25;
+  transition: opacity 0.4s ease, box-shadow 0.4s ease;
+}
+
+.gauge-segment.active {
+  opacity: 1;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.gauge-indicator {
+  position: absolute;
+  top: -3px;
+  width: 3px;
+  height: 14px;
+  background: white;
+  border-radius: 2px;
+  box-shadow: 0 0 6px white;
+  transition: left 0.5s ease;
+  transform: translateX(-50%);
+}
+
+.gauge-labels-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+.gauge-current {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.08em;
+  transition: color 0.4s ease;
+}

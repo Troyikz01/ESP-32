@@ -16,7 +16,7 @@
   <!-- Navigation -->
   <nav>
     <div class="nav-left">
-      <div class="logo"> TROYIKZ ESP32 DASHBOARD</div>
+      <div class="logo">ESP32 DASHBOARD</div>
       <div class="live-badge">
         <span class="dot"></span>
         LIVE
@@ -24,6 +24,22 @@
       <div class="esp-status connected" id="espStatus">
         <span class="esp-dot" id="espDot"></span>
         <span id="espLabel">ESP32 CONNECTED</span>
+      </div>
+      <!-- Heat Stress Level Bar -->
+      <div class="gauge-widget" id="gaugeWidget">
+        <div class="gauge-title">HEAT STRESS</div>
+        <div class="gauge-bar-track">
+          <div class="gauge-segment" style="background:#22c55e;" id="arc0"></div>
+          <div class="gauge-segment" style="background:#86efac;" id="arc1"></div>
+          <div class="gauge-segment" style="background:#facc15;" id="arc2"></div>
+          <div class="gauge-segment" style="background:#f97316;" id="arc3"></div>
+          <div class="gauge-segment" style="background:#ef4444;" id="arc4"></div>
+          <div class="gauge-indicator" id="gaugeNeedle"></div>
+        </div>
+        <div class="gauge-labels-row">
+          <span>LOW</span><span>NORMAL</span><span>CAUTION</span><span>HOT</span><span>DANGER</span>
+        </div>
+        <div class="gauge-current" id="gaugeLabel">● NORMAL</div>
       </div>
     </div>
     <div class="nav-right">
@@ -109,6 +125,20 @@
           </div>
         </div>
         <div class="chart-wrap" id="humiChart"></div>
+      </div>
+    </div>
+
+    <!-- Combined Chart -->
+    <div class="charts-row" style="grid-template-columns: 1fr;">
+      <div class="chart-card">
+        <div class="chart-title">
+          Temperature & Humidity Overview
+          <div class="chart-legend">
+            <div class="legend-item"><span class="legend-dot" style="background: #f97316;"></span> Temperature</div>
+            <div class="legend-item"><span class="legend-dot" style="background: #38bdf8;"></span> Humidity</div>
+          </div>
+        </div>
+        <div class="chart-wrap" id="combinedChart" style="height: 220px;"></div>
       </div>
     </div>
 
