@@ -14,17 +14,17 @@
 
   <!-- Navigation -->
   <nav>
+    <!-- LEFT: Logo + Status -->
     <div class="nav-left">
-      <div class="logo">ESP32 DASHBOARD</div>
-      <div class="live-badge">
-        <span class="dot"></span>LIVE
-      </div>
+      <div class="logo">ESP32</div>
+      <div class="live-badge"><span class="dot"></span>LIVE</div>
       <div class="esp-status connected" id="espStatus">
         <span class="esp-dot" id="espDot"></span>
-        <span id="espLabel">ESP32 CONNECTED</span>
+        <span id="espLabel">CONNECTED</span>
       </div>
     </div>
 
+    <!-- CENTER: Heat Stress + Theme dot -->
     <div class="nav-center">
       <div class="gauge-widget" id="gaugeWidget">
         <div class="gauge-title">HEAT STRESS</div>
@@ -41,6 +41,7 @@
         </div>
         <div class="gauge-current" id="gaugeLabel">● NORMAL</div>
       </div>
+      <!-- Theme dot right beside gauge -->
       <div class="theme-dropdown" id="themeDropdown">
         <button class="theme-dot-trigger" id="themeToggleBtn" title="Change Theme"></button>
         <div class="theme-dropdown-menu" id="themeMenu">
@@ -68,6 +69,7 @@
       </div>
     </div>
 
+    <!-- RIGHT: Signal, time, status, sound -->
     <div class="nav-right">
       <div class="wifi-widget">
         <div class="wifi-bars excellent">
