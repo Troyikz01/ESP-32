@@ -42,7 +42,6 @@
    THERMAL STATES — Apply to <body> via JavaScript
    ============================================================ */
 
-/* Thermal State: HOT (Temperature > 35°C) */
 body.thermal-hot {
   --thermal-primary:    #ef4444;
   --thermal-secondary:  #2a0f0f;
@@ -52,7 +51,6 @@ body.thermal-hot {
   --thermal-bg-glow:    radial-gradient(ellipse at top, rgba(239, 68, 68, 0.12) 0%, transparent 60%);
 }
 
-/* Thermal State: WARM (Temperature 28-35°C) */
 body.thermal-warm {
   --thermal-primary:    #f97316;
   --thermal-secondary:  #2a1a0f;
@@ -62,7 +60,6 @@ body.thermal-warm {
   --thermal-bg-glow:    radial-gradient(ellipse at top, rgba(249, 115, 22, 0.1) 0%, transparent 60%);
 }
 
-/* Thermal State: COLD (Temperature 15-20°C) */
 body.thermal-cold {
   --thermal-primary:    #38bdf8;
   --thermal-secondary:  #0a1a2a;
@@ -72,7 +69,6 @@ body.thermal-cold {
   --thermal-bg-glow:    radial-gradient(ellipse at top, rgba(56, 189, 248, 0.12) 0%, transparent 60%);
 }
 
-/* Thermal State: FREEZING (Temperature < 15°C) */
 body.thermal-freezing {
   --thermal-primary:    #a78bfa;
   --thermal-secondary:  #1a0f2a;
@@ -82,7 +78,6 @@ body.thermal-freezing {
   --thermal-bg-glow:    radial-gradient(ellipse at top, rgba(167, 139, 250, 0.12) 0%, transparent 60%);
 }
 
-/* Thermal State: NORMAL (Temperature 20-28°C, Humidity 40-70%) */
 body.thermal-normal {
   --thermal-primary:    #22c55e;
   --thermal-secondary:  #0f2a1a;
@@ -113,7 +108,6 @@ body {
   transition: background 0.8s ease;
 }
 
-/* Dynamic Background Glow — Changes with thermal state */
 body::before {
   content: '';
   position: fixed;
@@ -127,7 +121,6 @@ body::before {
   transition: background 0.8s ease;
 }
 
-/* Ambient Floating Particles */
 body::after {
   content: '';
   position: fixed;
@@ -292,7 +285,6 @@ nav {
 .wifi-bars span:nth-child(3) { height: 11px; }
 .wifi-bars span:nth-child(4) { height: 16px; }
 
-/* WiFi signal strength with glow effects */
 .wifi-bars.excellent span { 
   background: var(--green); 
   box-shadow: 0 0 8px var(--green); 
@@ -357,7 +349,7 @@ nav {
 }
 
 /* ============================================================
-   ALERT BANNER — ENHANCED
+   ALERT BANNER
    ============================================================ */
 #alert-banner {
   display: none;
@@ -440,7 +432,7 @@ main {
 }
 
 /* ============================================================
-   STAT CARDS — GLASSMORPHISM WITH GLOW EFFECTS
+   STAT CARDS
    ============================================================ */
 .cards {
   display: grid;
@@ -461,7 +453,6 @@ main {
   -webkit-backdrop-filter: blur(12px);
 }
 
-/* Top accent line */
 .card::before {
   content: '';
   position: absolute;
@@ -474,7 +465,6 @@ main {
   transition: all 0.4s ease;
 }
 
-/* Ambient glow on hover */
 .card::after {
   content: '';
   position: absolute;
@@ -500,7 +490,6 @@ main {
   opacity: 0.2;
 }
 
-/* Card Type-Specific Accent Colors & Glows */
 .temp-card {
   --card-accent: var(--temp);
   --card-glow: rgba(249, 115, 22, 0.35);
@@ -582,7 +571,7 @@ main {
 }
 
 /* ============================================================
-   STATUS PILLS — ENHANCED
+   STATUS PILLS
    ============================================================ */
 .status-pill {
   display: inline-flex;
@@ -646,7 +635,6 @@ main {
   to { box-shadow: 0 0 45px rgba(225, 29, 72, 0.55); }
 }
 
-/* Cold status styles (add to JS as needed) */
 .status-cold {
   background: rgba(56, 189, 248, 0.12);
   color: #7dd3fc;
@@ -668,7 +656,7 @@ main {
 }
 
 /* ============================================================
-   CHARTS — ENHANCED
+   CHARTS
    ============================================================ */
 .charts-row {
   display: grid;
@@ -693,7 +681,6 @@ main {
   transition: all 0.3s ease;
 }
 
-/* Thermal-aware top accent */
 .chart-card::before {
   content: '';
   position: absolute;
@@ -757,7 +744,7 @@ main {
 }
 
 /* ============================================================
-   DATA TABLE — ENHANCED
+   DATA TABLE
    ============================================================ */
 .table-card {
   background: linear-gradient(135deg, rgba(15, 19, 25, 0.95) 0%, rgba(22, 28, 38, 0.88) 100%);
@@ -847,7 +834,6 @@ tr:hover td.td-hot {
   background: rgba(239, 68, 68, 0.08);
 }
 
-/* Temperature cell colors with glow */
 .td-temp { 
   color: var(--temp); 
   text-shadow: 0 0 10px rgba(249, 115, 22, 0.35);
@@ -872,7 +858,6 @@ tr:hover td.td-hot {
   50% { text-shadow: 0 0 25px rgba(239, 68, 68, 0.9); }
 }
 
-/* Cold/Freezing cell styles */
 .td-cold {
   color: #7dd3fc;
   text-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
@@ -884,7 +869,7 @@ tr:hover td.td-hot {
 }
 
 /* ============================================================
-   TOAST NOTIFICATION — ENHANCED
+   TOAST NOTIFICATION
    ============================================================ */
 #toast {
   position: fixed;
@@ -913,7 +898,7 @@ tr:hover td.td-hot {
 }
 
 /* ============================================================
-   SESSION DROPDOWN — ENHANCED
+   SESSION SELECT
    ============================================================ */
 .session-select {
   background: var(--surface2);
@@ -939,7 +924,7 @@ tr:hover td.td-hot {
 }
 
 /* ============================================================
-   SESSION TABLE ROWS — ENHANCED
+   SESSION TABLE ROWS
    ============================================================ */
 tr.session-header td {
   background: linear-gradient(90deg, var(--surface2) 0%, rgba(22, 28, 38, 0.4) 100%);
@@ -1019,11 +1004,34 @@ tr.session-header:hover .session-toggle {
   box-shadow: 0 0 18px rgba(56, 189, 248, 0.3);
 }
 
+/* Per-session delete button */
+.btn-del-session {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  opacity: 0.6;
+}
+
+.btn-del-session:hover {
+  background: rgba(239, 68, 68, 0.15);
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.35);
+  opacity: 1;
+}
+
 tr.session-row td {
   opacity: 1;
 }
 
-/* Group Headers with Thermal Indicator */
 tr.group-header td {
   background: linear-gradient(90deg, var(--surface2) 0%, rgba(22, 28, 38, 0.4) 100%);
   border-top: 2px solid var(--border);
@@ -1037,7 +1045,6 @@ tr.group-header:first-child td {
   border-top: none;
 }
 
-/* Left border indicator with thermal color */
 tr.group-header:not(.group-old) td {
   border-left: 4px solid var(--thermal-primary);
   box-shadow: inset 6px 0 20px var(--thermal-glow);
@@ -1047,7 +1054,6 @@ tr.group-header.group-old td {
   border-left: 4px solid var(--border);
 }
 
-/* Past 24h rows — slightly dimmed */
 tr.row-old td {
   opacity: 0.55;
 }
@@ -1059,8 +1065,6 @@ tr.row-old:hover td {
 /* ============================================================
    THERMAL STATE ANIMATIONS
    ============================================================ */
-
-/* Heat wave animation for hot state */
 body.thermal-hot .card::before {
   animation: heat-wave 2s ease-in-out infinite;
 }
@@ -1070,7 +1074,6 @@ body.thermal-hot .card::before {
   50% { opacity: 1; }
 }
 
-/* Breathing glow for normal state */
 body.thermal-normal .live-badge {
   animation: breathing-glow 3s ease-in-out infinite;
 }
@@ -1080,223 +1083,12 @@ body.thermal-normal .live-badge {
   50% { box-shadow: 0 0 35px var(--thermal-glow); }
 }
 
-/* Frost shimmer for cold state */
 body.thermal-cold .card::after,
 body.thermal-freezing .card::after {
   opacity: 0.1;
   background: radial-gradient(ellipse at center, rgba(56, 189, 248, 0.15) 0%, transparent 60%);
 }
 
-/* ============================================================
-   RESPONSIVE — TABLET (max 768px)
-   ============================================================ */
-@media (max-width: 768px) {
-  nav {
-    padding: 0.9rem 1rem;
-    gap: 0.6rem;
-  }
-
-  .last-update {
-    display: none;
-  }
-
-  .nav-right {
-    gap: 0.5rem;
-  }
-
-  .btn-sound,
-  .btn-export {
-    padding: 6px 10px;
-    font-size: 0.72rem;
-  }
-
-  main {
-    padding: 1rem;
-  }
-
-  .cards {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.85rem;
-  }
-
-  .card {
-    padding: 1.1rem 1.2rem;
-  }
-
-  .card-value {
-    font-size: 2.1rem;
-  }
-
-  .charts-row {
-    grid-template-columns: 1fr;
-    gap: 0.85rem;
-  }
-
-  .chart-wrap {
-    height: 190px;
-  }
-
-  .chart-title {
-    font-size: 0.72rem;
-  }
-
-  .chart-legend {
-    display: none;
-  }
-
-  .session-select {
-    max-width: 160px;
-    font-size: 0.7rem;
-  }
-
-  .btn-dl-session {
-    display: none;
-  }
-}
-
-/* ============================================================
-   RESPONSIVE — MOBILE (max 480px)
-   ============================================================ */
-@media (max-width: 480px) {
-  .logo {
-    font-size: 0.85rem;
-  }
-
-  .live-badge {
-    font-size: 0.62rem;
-    padding: 3px 9px;
-  }
-
-  .wifi-label {
-    display: none;
-  }
-
-  .btn-sound,
-  .btn-export {
-    padding: 5px 8px;
-    font-size: 0.68rem;
-  }
-
-  .cards {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.7rem;
-  }
-
-  .card {
-    padding: 0.95rem 1rem;
-    border-radius: 14px;
-  }
-
-  .card-value {
-    font-size: 1.85rem;
-  }
-
-  .card-label {
-    font-size: 0.62rem;
-  }
-
-  .card-sub {
-    font-size: 0.65rem;
-  }
-
-  .chart-wrap {
-    height: 170px;
-  }
-
-  .chart-card {
-    padding: 1rem;
-    border-radius: 14px;
-  }
-
-  .section-label {
-    font-size: 0.65rem;
-  }
-
-  #alert-banner {
-    font-size: 0.78rem;
-    padding: 0.6rem 1rem;
-  }
-
-  .table-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    padding: 0.9rem 1rem;
-  }
-
-  th, td {
-    padding: 0.6rem 1rem;
-  }
-}
-
-/* ============================================================
-   ACCESSIBILITY & REDUCED MOTION
-   ============================================================ */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* High Contrast Mode Support */
-@media (prefers-contrast: high) {
-  :root {
-    --border: #3a4a62;
-  }
-  
-  .card,
-  .chart-card,
-  .table-card {
-    border-width: 2px;
-  }
-}
-
-/* Focus States for Keyboard Navigation */
-.btn-sound:focus-visible,
-.btn-export:focus-visible,
-.session-select:focus-visible,
-.btn-dl-session:focus-visible {
-  outline: 2px solid var(--thermal-primary);
-  outline-offset: 3px;
-}
-
-/* ============================================================
-   PRINT STYLES
-   ============================================================ */
-@media print {
-  body {
-    background: white;
-    color: black;
-  }
-  
-  body::before,
-  body::after {
-    display: none;
-  }
-  
-  .card,
-  .chart-card,
-  .table-card {
-    background: white;
-    border: 1px solid #ccc;
-    break-inside: avoid;
-  }
-  
-  nav {
-    position: static;
-    background: white;
-  }
-  
-  .live-badge,
-  .btn-sound,
-  .btn-export {
-    display: none;
-  }
-}
 /* ============================================================
    TABLE TOOLBAR & STATS BAR
    ============================================================ */
@@ -1563,7 +1355,7 @@ tr.session-current .group-label {
 }
 
 /* ============================================================
-   HEAT STRESS GAUGE — Horizontal Bar
+   HEAT STRESS GAUGE
    ============================================================ */
 .gauge-widget {
   display: flex;
@@ -1645,10 +1437,77 @@ tr.session-current .group-label {
 }
 
 /* ============================================================
-   RESPONSIVE OVERHAUL — TABLET (max 768px)
+   ACCESSIBILITY & REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  :root {
+    --border: #3a4a62;
+  }
+  
+  .card,
+  .chart-card,
+  .table-card {
+    border-width: 2px;
+  }
+}
+
+.btn-sound:focus-visible,
+.btn-export:focus-visible,
+.session-select:focus-visible,
+.btn-dl-session:focus-visible,
+.btn-del-session:focus-visible {
+  outline: 2px solid var(--thermal-primary);
+  outline-offset: 3px;
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  
+  body::before,
+  body::after {
+    display: none;
+  }
+  
+  .card,
+  .chart-card,
+  .table-card {
+    background: white;
+    border: 1px solid #ccc;
+    break-inside: avoid;
+  }
+  
+  nav {
+    position: static;
+    background: white;
+  }
+  
+  .live-badge,
+  .btn-sound,
+  .btn-export {
+    display: none;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — TABLET (max 768px)
    ============================================================ */
 @media (max-width: 768px) {
-  /* Nav */
   nav {
     flex-wrap: wrap;
     padding: 0.75rem 1rem;
@@ -1664,13 +1523,11 @@ tr.session-current .group-label {
     flex-wrap: wrap;
   }
 
-  /* Hide less important nav items */
   .wifi-widget,
   .last-update {
     display: none;
   }
 
-  /* Gauge — shrink */
   .gauge-widget {
     min-width: 160px;
     padding: 5px 8px;
@@ -1680,13 +1537,11 @@ tr.session-current .group-label {
     font-size: 0.45rem;
   }
 
-  /* ESP status */
   .esp-status {
     font-size: 0.68rem;
     padding: 4px 10px;
   }
 
-  /* Cards — 2 columns */
   .cards {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
@@ -1696,7 +1551,6 @@ tr.session-current .group-label {
     font-size: 2rem;
   }
 
-  /* Charts — stack */
   .charts-row {
     grid-template-columns: 1fr;
     gap: 0.75rem;
@@ -1706,7 +1560,6 @@ tr.session-current .group-label {
     height: 180px;
   }
 
-  /* Table toolbar */
   .table-toolbar {
     flex-direction: column;
     align-items: flex-start;
@@ -1721,14 +1574,12 @@ tr.session-current .group-label {
     display: none;
   }
 
-  /* Stats bar */
   .stats-bar {
     flex-wrap: wrap;
     gap: 0.5rem;
     font-size: 0.68rem;
   }
 
-  /* Table scroll */
   .table-scroll {
     overflow-x: auto;
   }
@@ -1738,13 +1589,17 @@ tr.session-current .group-label {
     padding: 0.6rem 0.75rem;
     white-space: nowrap;
   }
+
+  .btn-dl-session,
+  .btn-del-session {
+    display: none;
+  }
 }
 
 /* ============================================================
-   RESPONSIVE OVERHAUL — MOBILE (max 480px)
+   RESPONSIVE — MOBILE (max 480px)
    ============================================================ */
 @media (max-width: 480px) {
-  /* Nav — stack into 2 rows */
   nav {
     padding: 0.6rem 0.75rem;
     gap: 0.5rem;
@@ -1759,7 +1614,6 @@ tr.session-current .group-label {
     padding: 3px 8px;
   }
 
-  /* Hide gauge on very small screens, show as text only */
   .gauge-widget {
     min-width: 140px;
     padding: 4px 6px;
@@ -1777,19 +1631,16 @@ tr.session-current .group-label {
     font-size: 0.6rem;
   }
 
-  /* Hide wifi on mobile */
   .wifi-widget,
   .last-update,
   .dl-hint {
     display: none;
   }
 
-  /* Sound button — icon only */
   .btn-sound span + * {
     display: none;
   }
 
-  /* Cards — 2 columns, smaller */
   .cards {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.6rem;
@@ -1812,7 +1663,6 @@ tr.session-current .group-label {
     font-size: 0.62rem;
   }
 
-  /* Charts */
   .chart-wrap {
     height: 160px;
   }
@@ -1830,18 +1680,15 @@ tr.session-current .group-label {
     display: none;
   }
 
-  /* Section label */
   .section-label {
     font-size: 0.62rem;
   }
 
-  /* Alert banner */
   #alert-banner {
     font-size: 0.72rem;
     padding: 0.5rem 0.75rem;
   }
 
-  /* Table */
   .table-header {
     flex-direction: column;
     align-items: flex-start;
@@ -1866,7 +1713,6 @@ tr.session-current .group-label {
     font-size: 0.6rem;
   }
 
-  /* Download nav */
   .dl-nav {
     padding: 0.6rem 0.75rem;
     gap: 0.5rem;
@@ -1882,7 +1728,6 @@ tr.session-current .group-label {
     padding: 5px 10px;
   }
 
-  /* Stats bar */
   .stats-bar {
     flex-wrap: wrap;
     gap: 0.4rem;
@@ -1890,14 +1735,12 @@ tr.session-current .group-label {
     padding: 0.5rem 0.75rem;
   }
 
-  /* Toolbar buttons */
   .btn-export-table,
   .btn-clear-log {
     font-size: 0.68rem;
     padding: 5px 10px;
   }
 
-  /* Toast */
   #toast {
     font-size: 0.72rem;
     padding: 0.5rem 1rem;
