@@ -10,6 +10,158 @@ const TABLE = 'sensor_readings';
 let currentFilter = 0;
 let sessionStart  = new Date().toISOString();
 
+// ============================================================
+// EMAIL ALERT ADDITIONS — paste into your script.js
+// Place right after your SUPABASE CONFIG block at the top
+// ============================================================
+
+// ---- Paste your deployed GAS Web App URL here ----
+const GAS_ALERT_URL = 'https://script.google.com/macros/s/AKfycbxgL0bvvPSjgPcENRxmB0_8m_9Awg2UzkCKOYuGGqz-SXSg76U-mssV9S976ZFx0aIr_w/exec';
+
+// Alert settings
+const ALERT_TEMP_THRESHOLD  = 38;     // °C
+const ALERT_COOLDOWN_MS     = 10 * 60 * 1000;  // 10 minutes in ms
+const ALERT_LOCATION        = 'Room 1';         // shown in the email subject
+
+let lastAlertSentAt = 0;   // tracks cooldown in this browser session
+
+
+// ============================================================
+// SEND ALERT — called automatically from fetchLatest()
+// ============================================================
+async function sendEmailAlert(temp, humidity, heatIndex) {
+  const now = Date.now();
+
+  // Respect cooldown
+  if (now - lastAlertSentAt < ALERT_COOLDOWN_MS) {
+    const remaining = Math.ceil((ALERT_COOLDOWN_MS - (now - lastAlertSentAt)) / 60000);
+    console.log(`[Alert] Cooldown active — ${remaining} min remaining`);
+    return;
+  }
+
+  // Below threshold
+  if (temp < ALERT_TEMP_THRESHOLD && heatIndex < ALERT_TEMP_THRESHOLD) return;
+
+  try {
+    const res = await fetch(GAS_ALERT_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain' },  // GAS needs text/plain for simple POST
+      body: JSON.stringify({
+        temperature: temp,
+        humidity:    humidity,
+        heat_index:  heatIndex,
+        source:      'Dashboard',
+        location:    ALERT_LOCATION,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.status === 'sent') {
+      lastAlertSentAt = now;
+      showToast(`🚨 Heat alert email sent! (${temp.toFixed(1)}°C)`);
+      console.log('[Alert] Email sent →', data);
+    } else if (data.status === 'skipped' && data.reason === 'cooldown') {
+      lastAlertSentAt = now - ALERT_COOLDOWN_MS + (data.next_in_mins * 60000);
+      console.log('[Alert] GAS cooldown active:', data.next_in_mins, 'min remaining');
+    } else {
+      console.log('[Alert] GAS response:', data);
+    }
+  } catch (err) {
+    console.warn('[Alert] Could not reach GAS endpoint:', err.message);
+  }
+}
+
+
+// ============================================================
+// UPDATE fetchLatest() — add ONE line to the existing function
+//
+// Find this block in your existing fetchLatest():
+//
+//   updateThermalState(t, h);
+//   updateGauge(hi, t);
+//
+// Add the call RIGHT AFTER those two lines:
+//
+//   sendEmailAlert(t, h, hi);          // <-- add this line
+//
+// ============================================================
+
+
+// ============================================================
+// ALERT STATUS INDICATOR — optional UI widget in the nav
+// Add this HTML inside <div class="nav-right"> in index.html:
+//
+//  <div id="alertStatus" class="alert-status-widget" title="Email alert status">
+//    <span id="alertDot" class="alert-status-dot"></span>
+//    <span id="alertText">Alerts ON</span>
+//  </div>
+//
+// ============================================================
+
+// Updates the small nav indicator
+function updateAlertIndicator(temp, heatIndex) {
+  const dot  = document.getElementById('alertDot');
+  const text = document.getElementById('alertText');
+  if (!dot || !text) return;
+
+  const now       = Date.now();
+  const inCooldown = (now - lastAlertSentAt) < ALERT_COOLDOWN_MS;
+  const hot        = temp >= ALERT_TEMP_THRESHOLD || heatIndex >= ALERT_TEMP_THRESHOLD;
+
+  if (hot && !inCooldown) {
+    dot.style.background  = '#ef4444';
+    dot.style.boxShadow   = '0 0 8px #ef4444';
+    dot.style.animation   = 'blink 0.8s ease-in-out infinite';
+    text.textContent       = `🚨 Alerting`;
+    text.style.color       = '#fca5a5';
+  } else if (inCooldown) {
+    const remaining = Math.ceil((ALERT_COOLDOWN_MS - (now - lastAlertSentAt)) / 60000);
+    dot.style.background  = '#f97316';
+    dot.style.boxShadow   = '0 0 8px #f97316';
+    dot.style.animation   = '';
+    text.textContent       = `⏱ ${remaining}m cooldown`;
+    text.style.color       = '#fdba74';
+  } else {
+    dot.style.background  = '#22c55e';
+    dot.style.boxShadow   = '0 0 8px #22c55e';
+    dot.style.animation   = '';
+    text.textContent       = `✓ Alert ready`;
+    text.style.color       = '#4ade80';
+  }
+}
+
+
+// ============================================================
+// ALERT WIDGET CSS — add to your style.css
+// ============================================================
+/*
+.alert-status-widget {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-family: 'Space Mono', monospace;
+  cursor: default;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.alert-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+*/
+
 
 // ============================================================
 // HEAT INDEX CALCULATOR (Steadman formula)
@@ -139,6 +291,7 @@ async function fetchLatest() {
 
   updateThermalState(t, h);
   updateGauge(hi, t);
+  sendEmailAlert(t, h, hi);
 
   // Alert banner
   const banner = document.getElementById('alert-banner');
