@@ -7,16 +7,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Theme system loads BEFORE style.css so thermal states in style.css win -->
+  <link rel="stylesheet" href="themes.css">
   <link rel="stylesheet" href="style.css">
-  <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="thermal-normal">
+<body class="thermal-normal" data-theme="cyber-dark">
 
   <!-- Navigation -->
   <nav>
     <div class="nav-left">
-      <div class="logo">TROYIKZ DASHBOARD </div>
+      <div class="logo">TROYIKZ DASHBOARD</div>
       <div class="live-badge">
         <span class="dot"></span>
         LIVE
@@ -25,7 +26,9 @@
         <span class="esp-dot" id="espDot"></span>
         <span id="espLabel">ESP32 CONNECTED</span>
       </div>
-      <!-- Heat Stress Level Bar -->
+    </div>
+
+    <div class="nav-center">
       <div class="gauge-widget" id="gaugeWidget">
         <div class="gauge-title">HEAT STRESS</div>
         <div class="gauge-bar-track">
@@ -41,6 +44,24 @@
         </div>
         <div class="gauge-current" id="gaugeLabel">● NORMAL</div>
       </div>
+
+      <div class="theme-picker" id="themePicker">
+      <button class="theme-btn" id="themeBtn" title="Change theme">
+        <span class="theme-btn-icon">🎨</span>
+        <span class="theme-btn-swatch" id="themeSwatch"></span>
+        <span class="theme-btn-label" id="themeBtnLabel">THEME</span>
+        <span class="theme-btn-arrow">▾</span>
+      </button>
+      <div class="theme-dropdown" id="themeDropdown">
+        <div class="theme-dropdown-header">
+          <div class="theme-dropdown-title">COLOR THEMES</div>
+          <div class="theme-dropdown-count">12 THEMES</div>
+        </div>
+        <!-- Populated by JS -->
+        <div id="themeGridContainer"></div>
+      </div>
+    </div>
+
     </div>
     <div class="nav-right">
       <div class="wifi-widget">
@@ -49,7 +70,7 @@
         </div>
         <span class="wifi-label">Excellent</span>
       </div>
-      <span class="last-update">Last: 7:40:50 AM</span>
+      <span class="last-update">Last: —</span>
       <div class="live-badge" id="thermalLabel" style="font-size:0.7rem;">🟢 Normal</div>
       <button class="btn-sound sound-on" id="soundBtn">
         <span>🔊</span> Sound
@@ -57,7 +78,7 @@
     </div>
   </nav>
 
-  <!-- Alert Banner (hidden by default) -->
+  <!-- Alert Banner -->
   <div id="alert-banner">
     <span>⚠️</span>
     <span>HEAT WARNING: Temperature exceeds safe limits! Take immediate action.</span>
@@ -67,78 +88,74 @@
   <main>
     <div class="section-label">Current Readings</div>
 
-    <!-- Stat Cards -->
     <div class="cards">
       <div class="card temp-card">
         <div class="card-label">Temperature</div>
-        <div class="card-value" id="tempValue">29.8<span>°C</span></div>
+        <div class="card-value" id="tempValue">—<span>°C</span></div>
         <div class="card-sub">Range: <b>18-32°C</b></div>
-        <span class="status-pill status-warn" id="tempStatus">Warm</span>
+        <span class="status-pill status-ok" id="tempStatus">—</span>
       </div>
 
       <div class="card humi-card">
         <div class="card-label">Humidity</div>
-        <div class="card-value" id="humiValue">72.0<span>%</span></div>
+        <div class="card-value" id="humiValue">—<span>%</span></div>
         <div class="card-sub">Range: <b>40-70%</b></div>
-        <span class="status-pill status-warn" id="humiStatus">Humid</span>
+        <span class="status-pill status-ok" id="humiStatus">—</span>
       </div>
 
       <div class="card heat-card">
         <div class="card-label">Heat Index</div>
-        <div class="card-value" id="heatValue">35.0<span>°C</span></div>
+        <div class="card-value" id="heatValue">—<span>°C</span></div>
         <div class="card-sub">Feels like</div>
-        <span class="status-pill status-hot" id="heatStatus">Danger Zone</span>
+        <span class="status-pill status-ok" id="heatStatus">—</span>
       </div>
 
       <div class="card total-card">
         <div class="card-label">Total Readings</div>
-        <div class="card-value">12,847</div>
+        <div class="card-value">—</div>
         <div class="card-sub">All time</div>
       </div>
 
       <div class="card today-card">
         <div class="card-label">Readings Today</div>
-        <div class="card-value">1,284</div>
+        <div class="card-value">—</div>
         <div class="card-sub">Every 3 seconds</div>
       </div>
     </div>
 
-    <!-- Charts -->
     <div class="section-label">History</div>
     <div class="charts-row">
       <div class="chart-card">
         <div class="chart-title">
           Temperature History
           <div class="chart-legend">
-            <div class="legend-item"><span class="legend-dot" style="background: #f97316;"></span> Temp</div>
-            <div class="legend-item"><span class="legend-dot" style="background: #e11d48;"></span> Heat Index</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span> Temp</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#e11d48;"></span> Heat Index</div>
           </div>
         </div>
         <div class="chart-wrap" id="tempChart"></div>
       </div>
-
       <div class="chart-card">
         <div class="chart-title">
           Humidity History
           <div class="chart-legend">
-            <div class="legend-item"><span class="legend-dot" style="background: #38bdf8;"></span> Humidity</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#38bdf8;"></span> Humidity</div>
           </div>
         </div>
         <div class="chart-wrap" id="humiChart"></div>
       </div>
     </div>
 
-    <!-- Combined Chart -->
-    <div class="charts-row" style="grid-template-columns: 1fr;">
+    <div class="charts-row" style="grid-template-columns:1fr;">
       <div class="chart-card">
         <div class="chart-title">
-          Temperature & Humidity Overview
+          Temperature &amp; Humidity Overview
           <div class="chart-legend">
-            <div class="legend-item"><span class="legend-dot" style="background: #f97316;"></span> Temperature</div>
-            <div class="legend-item"><span class="legend-dot" style="background: #38bdf8;"></span> Humidity</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span> Temperature</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#38bdf8;"></span> Humidity</div>
           </div>
         </div>
-        <div class="chart-wrap" id="combinedChart" style="height: 220px;"></div>
+        <div class="chart-wrap" id="combinedChart" style="height:220px;"></div>
       </div>
     </div>
 
@@ -148,7 +165,6 @@
         <div class="table-title">Reading History</div>
         <div class="table-count" id="tableCount">Showing 0 entries</div>
       </div>
-      <!-- Download Nav -->
       <div class="dl-nav">
         <div class="dl-nav-left">
           <select class="dl-select" id="dlSelect">
@@ -176,68 +192,14 @@
             </tr>
           </thead>
           <tbody>
-            <tr class="session-header">
-              <td colspan="5">
-                <span class="session-toggle">▶</span>
-                <span class="group-label">Today — Session 1</span>
-                <span class="group-count">8 readings</span>
-                <button class="btn-dl-session">⬇ CSV</button>
+            <tr>
+              <td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">
+                Loading data…
               </td>
-            </tr>
-            <tr>
-              <td>07:40:50 AM</td>
-              <td class="td-temp">29.8°C</td>
-              <td class="td-humi">72.0%</td>
-              <td class="td-heat">35.0°C</td>
-              <td><span class="status-pill status-warn">Warm</span></td>
-            </tr>
-            <tr>
-              <td>07:40:47 AM</td>
-              <td class="td-temp">29.6°C</td>
-              <td class="td-humi">71.5%</td>
-              <td class="td-heat">34.8°C</td>
-              <td><span class="status-pill status-warn">Warm</span></td>
-            </tr>
-            <tr>
-              <td>07:40:44 AM</td>
-              <td class="td-temp">29.4°C</td>
-              <td class="td-humi">71.0%</td>
-              <td class="td-heat">34.5°C</td>
-              <td><span class="status-pill status-ok">Normal</span></td>
-            </tr>
-            <tr>
-              <td>07:40:41 AM</td>
-              <td class="td-hot">36.2°C</td>
-              <td class="td-humi">73.2%</td>
-              <td class="td-hot">42.1°C</td>
-              <td><span class="status-pill status-hot">Danger</span></td>
-            </tr>
-            <tr class="session-header">
-              <td colspan="5">
-                <span class="session-toggle">▶</span>
-                <span class="group-label">Yesterday — Session 3</span>
-                <span class="group-count">12 readings</span>
-                <button class="btn-dl-session">⬇ CSV</button>
-              </td>
-            </tr>
-            <tr class="row-old">
-              <td>11:30:22 PM</td>
-              <td class="td-cold">16.8°C</td>
-              <td class="td-humi">65.0%</td>
-              <td class="td-cold">16.2°C</td>
-              <td><span class="status-pill status-cold">Cool</span></td>
-            </tr>
-            <tr class="row-old">
-              <td>11:30:19 PM</td>
-              <td class="td-freezing">8.5°C</td>
-              <td class="td-humi">62.0%</td>
-              <td class="td-freezing">7.2°C</td>
-              <td><span class="status-pill status-freezing">Freezing</span></td>
             </tr>
           </tbody>
         </table>
       </div>
-      <!-- Table Toolbar -->
       <div class="table-toolbar">
         <div class="toolbar-left">
           <div class="filter-dropdown">
@@ -256,7 +218,6 @@
           <button class="btn-clear-log" id="clearLogBtn">✕ CLEAR LOG</button>
         </div>
       </div>
-      <!-- Stats Bar -->
       <div class="stats-bar">
         <span>LOGGED <b id="statLogged">0</b></span>
         <span>MIN TEMP <b id="statMin" class="td-temp">—</b></span>
@@ -266,8 +227,191 @@
     </div>
   </main>
 
-  <!-- Toast -->
-  <div id="toast">✓ Data exported successfully!</div>
+  <div id="toast">✓ Done</div>
+
+  <!-- ═══════════════════════════════════════════
+       THEME PICKER JS
+       Runs before script.js to apply saved theme instantly
+       ═══════════════════════════════════════════ -->
+  <script>
+  (function() {
+    const THEMES = [
+      // ── Dark themes ──
+      {
+        id: 'cyber-dark', name: 'Cyber Dark', dark: true,
+        swatches: ['#0a0d14', '#f97316', '#38bdf8', '#ef4444'],
+        desc: 'Default'
+      },
+      {
+        id: 'midnight', name: 'Midnight', dark: true,
+        swatches: ['#02050f', '#3b82f6', '#34d399', '#f472b6'],
+        desc: 'Electric blue'
+      },
+      {
+        id: 'matrix', name: 'Matrix', dark: true,
+        swatches: ['#000800', '#00e676', '#69ff47', '#ff6d00'],
+        desc: 'Neon green'
+      },
+      {
+        id: 'void', name: 'Void', dark: true,
+        swatches: ['#06040e', '#a78bfa', '#818cf8', '#f472b6'],
+        desc: 'Deep purple'
+      },
+      {
+        id: 'crimson', name: 'Crimson', dark: true,
+        swatches: ['#0e0205', '#fb7185', '#f9a8d4', '#fbbf24'],
+        desc: 'Blood red'
+      },
+      {
+        id: 'ocean', name: 'Ocean', dark: true,
+        swatches: ['#020c12', '#06b6d4', '#34d399', '#818cf8'],
+        desc: 'Deep sea'
+      },
+      {
+        id: 'ember', name: 'Ember', dark: true,
+        swatches: ['#0e0800', '#fbbf24', '#f97316', '#a3e635'],
+        desc: 'Molten gold'
+      },
+      {
+        id: 'synthwave', name: 'Synthwave', dark: true,
+        swatches: ['#04000e', '#e879f9', '#22d3ee', '#fb7185'],
+        desc: 'Retro neon'
+      },
+      // ── Light themes ──
+      {
+        id: 'arctic', name: 'Arctic', dark: false,
+        swatches: ['#eef4ff', '#2563eb', '#0369a1', '#dc2626'],
+        desc: 'Ice blue'
+      },
+      {
+        id: 'paper', name: 'Paper', dark: false,
+        swatches: ['#f9f8f5', '#374151', '#065f46', '#991b1b'],
+        desc: 'Minimal'
+      },
+      {
+        id: 'sakura', name: 'Sakura', dark: false,
+        swatches: ['#fff5f8', '#db2777', '#9d174d', '#b91c1c'],
+        desc: 'Cherry blossom'
+      },
+      {
+        id: 'forest', name: 'Forest', dark: false,
+        swatches: ['#f0f8f0', '#16a34a', '#0f766e', '#b91c1c'],
+        desc: 'Sage green'
+      },
+    ];
+
+    const STORAGE_KEY = 'troyikz-theme';
+    let currentTheme  = localStorage.getItem(STORAGE_KEY) || 'cyber-dark';
+
+    // Apply theme immediately to avoid flash
+    document.body.dataset.theme = currentTheme;
+
+    function applyTheme(id) {
+      currentTheme = id;
+      document.body.dataset.theme = id;
+      localStorage.setItem(STORAGE_KEY, id);
+
+      // Update button swatch
+      const theme = THEMES.find(t => t.id === id);
+      const swatch = document.getElementById('themeSwatch');
+      const label  = document.getElementById('themeBtnLabel');
+      if (swatch && theme) swatch.style.background = theme.swatches[1];
+      if (label  && theme) label.textContent = theme.name.toUpperCase();
+
+      // Update active card
+      document.querySelectorAll('.theme-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.theme === id);
+      });
+    }
+
+    function buildGrid() {
+      const container = document.getElementById('themeGridContainer');
+      if (!container) return;
+
+      const darkThemes  = THEMES.filter(t => t.dark);
+      const lightThemes = THEMES.filter(t => !t.dark);
+
+      let html = '';
+
+      // Dark section
+      html += '<div class="theme-section">';
+      html += '<div class="theme-section-label">DARK</div>';
+      html += '<div class="theme-grid">';
+      darkThemes.forEach(t => {
+        html += `
+          <div class="theme-card ${t.id === currentTheme ? 'active' : ''}" data-theme="${t.id}" title="${t.desc}">
+            <div class="theme-preview">
+              <span style="background:${t.swatches[0]}"></span>
+              <span style="background:${t.swatches[1]}"></span>
+              <span style="background:${t.swatches[2]}"></span>
+              <span style="background:${t.swatches[3]}"></span>
+            </div>
+            <div class="theme-card-name">${t.name}</div>
+          </div>`;
+      });
+      html += '</div></div>';
+
+      // Divider
+      html += '<div class="theme-divider"></div>';
+
+      // Light section
+      html += '<div class="theme-section">';
+      html += '<div class="theme-section-label">LIGHT</div>';
+      html += '<div class="theme-grid">';
+      lightThemes.forEach(t => {
+        html += `
+          <div class="theme-card ${t.id === currentTheme ? 'active' : ''}" data-theme="${t.id}" title="${t.desc}">
+            <div class="theme-preview" style="border-color:rgba(0,0,0,0.15)">
+              <span style="background:${t.swatches[0]}"></span>
+              <span style="background:${t.swatches[1]}"></span>
+              <span style="background:${t.swatches[2]}"></span>
+              <span style="background:${t.swatches[3]}"></span>
+            </div>
+            <div class="theme-card-name">${t.name}</div>
+          </div>`;
+      });
+      html += '</div></div>';
+
+      container.innerHTML = html;
+
+      // Click handlers
+      container.querySelectorAll('.theme-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          e.stopPropagation();
+          applyTheme(card.dataset.theme);
+          // Tiny bounce feedback
+          card.style.transform = 'scale(0.95)';
+          setTimeout(() => card.style.transform = '', 120);
+        });
+      });
+    }
+
+    // Init after DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+      buildGrid();
+      applyTheme(currentTheme);
+
+      const picker   = document.getElementById('themePicker');
+      const themeBtn = document.getElementById('themeBtn');
+
+      themeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        picker.classList.toggle('open');
+      });
+
+      document.addEventListener('click', () => {
+        picker.classList.remove('open');
+      });
+
+      document.getElementById('themeDropdown').addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    });
+
+    // Expose for external use
+    window.__themeSystem = { applyTheme, THEMES };
+  })();
+  </script>
 
   <script src="script.js"></script>
 </body>

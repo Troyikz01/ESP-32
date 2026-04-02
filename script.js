@@ -1,38 +1,101 @@
 // ============================================================
-// SUPABASE CONFIG — replace with your project credentials
+// SUPABASE CONFIG
 // ============================================================
 const SUPABASE_URL  = 'https://wjkvrwwpzngwfrxhcrlt.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indqa3Zyd3dwem5nd2ZyeGhjcmx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MDczNzIsImV4cCI6MjA4OTQ4MzM3Mn0.R-DlrG4gnyYS3hZr7_a_XlFzZg0hl64fsMaFG-QVZOU';
 
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
+const db    = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const TABLE = 'sensor_readings';
+
 let currentFilter = 0;
 let sessionStart  = new Date().toISOString();
 
+
 // ============================================================
-// EMAIL ALERT ADDITIONS — paste into your script.js
-// Place right after your SUPABASE CONFIG block at the top
+// EMAIL ALERT CONFIG
 // ============================================================
+const GAS_ALERT_URL        = 'https://script.google.com/macros/s/AKfycbxgL0bvvPSjgPcENRxmB0_8m_9Awg2UzkCKOYuGGqz-SXSg76U-mssV9S976ZFx0aIr_w/exec';
+const ALERT_TEMP_THRESHOLD = 38;            // °C
+const ALERT_COOLDOWN_MS    = 5 * 60 * 1000; // 5 minutes
+const ALERT_LOCATION       = 'Room 1';
 
-// ---- Paste your deployed GAS Web App URL here ----
-const GAS_ALERT_URL = 'https://script.google.com/macros/s/AKfycbxgL0bvvPSjgPcENRxmB0_8m_9Awg2UzkCKOYuGGqz-SXSg76U-mssV9S976ZFx0aIr_w/exec';
-
-// Alert settings
-const ALERT_TEMP_THRESHOLD  = 38;     // °C
-const ALERT_COOLDOWN_MS     = 10 * 60 * 1000;  // 10 minutes in ms
-const ALERT_LOCATION        = 'Room 1';         // shown in the email subject
-
-let lastAlertSentAt = 0;   // tracks cooldown in this browser session
+let lastAlertSentAt = 0;
+let espConnected    = false; // tracks live ESP32 status
 
 
 // ============================================================
-// SEND ALERT — called automatically from fetchLatest()
+// HEAT INDEX CALCULATOR (Steadman formula)
+// ============================================================
+function calcHeatIndex(t, h) {
+  if (t < 27) return t;
+  const hi =
+    -8.78469475556 +
+    1.61139411    * t +
+    2.33854883889 * h +
+    -0.14611605   * t * h +
+    -0.012308094  * t * t +
+    -0.016424828  * h * h +
+    0.002211732   * t * t * h +
+    0.00072546    * t * h * h +
+    -0.000003582  * t * t * h * h;
+  return Math.round(hi * 10) / 10;
+}
+
+
+// ============================================================
+// STATUS HELPERS
+// ============================================================
+function getTempStatus(t) {
+  if (t >= 38) return ['status-hot',      'Danger!'];
+  if (t >  35) return ['status-hot',      'Very Hot'];
+  if (t >  30) return ['status-warn',     'Warm'];
+  if (t >= 20) return ['status-ok',       'Normal'];
+  if (t >= 15) return ['status-cold',     'Cool'];
+  return              ['status-freezing', 'Freezing!'];
+}
+
+function getHumiStatus(h) {
+  if (h >  85) return ['status-hot',      'Very Humid'];
+  if (h >  70) return ['status-warn',     'Humid'];
+  if (h >= 40) return ['status-ok',       'Normal'];
+  if (h >= 25) return ['status-warn',     'Dry'];
+  return              ['status-cold',     'Very Dry'];
+}
+
+function getHeatStatus(hi) {
+  if (hi >= 38) return ['status-hot',      'Danger Zone'];
+  if (hi >= 35) return ['status-hot',      'Very Hot'];
+  if (hi >= 32) return ['status-warn',     'Caution'];
+  if (hi >= 27) return ['status-ok',       'Comfortable'];
+  if (hi >= 20) return ['status-cold',     'Cool'];
+  return               ['status-freezing', 'Cold!'];
+}
+
+
+// ============================================================
+// TODAY'S DATE RANGE
+// ============================================================
+function todayRange() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  return start.toISOString();
+}
+
+
+// ============================================================
+// SEND EMAIL ALERT via Google Apps Script
+// Only fires when ESP32 is connected — no stale-data alerts
 // ============================================================
 async function sendEmailAlert(temp, humidity, heatIndex) {
+  // Block if ESP32 is offline
+  if (!espConnected) {
+    console.log('[Alert] Skipped — ESP32 is not connected.');
+    return;
+  }
+
   const now = Date.now();
 
-  // Respect cooldown
+  // Browser-side cooldown
   if (now - lastAlertSentAt < ALERT_COOLDOWN_MS) {
     const remaining = Math.ceil((ALERT_COOLDOWN_MS - (now - lastAlertSentAt)) / 60000);
     console.log(`[Alert] Cooldown active — ${remaining} min remaining`);
@@ -45,7 +108,7 @@ async function sendEmailAlert(temp, humidity, heatIndex) {
   try {
     const res = await fetch(GAS_ALERT_URL, {
       method:  'POST',
-      headers: { 'Content-Type': 'text/plain' },  // GAS needs text/plain for simple POST
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         temperature: temp,
         humidity:    humidity,
@@ -72,152 +135,6 @@ async function sendEmailAlert(temp, humidity, heatIndex) {
   }
 }
 
-
-// ============================================================
-// UPDATE fetchLatest() — add ONE line to the existing function
-//
-// Find this block in your existing fetchLatest():
-//
-//   updateThermalState(t, h);
-//   updateGauge(hi, t);
-//
-// Add the call RIGHT AFTER those two lines:
-//
-//   sendEmailAlert(t, h, hi);          // <-- add this line
-//
-// ============================================================
-
-
-// ============================================================
-// ALERT STATUS INDICATOR — optional UI widget in the nav
-// Add this HTML inside <div class="nav-right"> in index.html:
-//
-//  <div id="alertStatus" class="alert-status-widget" title="Email alert status">
-//    <span id="alertDot" class="alert-status-dot"></span>
-//    <span id="alertText">Alerts ON</span>
-//  </div>
-//
-// ============================================================
-
-// Updates the small nav indicator
-function updateAlertIndicator(temp, heatIndex) {
-  const dot  = document.getElementById('alertDot');
-  const text = document.getElementById('alertText');
-  if (!dot || !text) return;
-
-  const now       = Date.now();
-  const inCooldown = (now - lastAlertSentAt) < ALERT_COOLDOWN_MS;
-  const hot        = temp >= ALERT_TEMP_THRESHOLD || heatIndex >= ALERT_TEMP_THRESHOLD;
-
-  if (hot && !inCooldown) {
-    dot.style.background  = '#ef4444';
-    dot.style.boxShadow   = '0 0 8px #ef4444';
-    dot.style.animation   = 'blink 0.8s ease-in-out infinite';
-    text.textContent       = `🚨 Alerting`;
-    text.style.color       = '#fca5a5';
-  } else if (inCooldown) {
-    const remaining = Math.ceil((ALERT_COOLDOWN_MS - (now - lastAlertSentAt)) / 60000);
-    dot.style.background  = '#f97316';
-    dot.style.boxShadow   = '0 0 8px #f97316';
-    dot.style.animation   = '';
-    text.textContent       = `⏱ ${remaining}m cooldown`;
-    text.style.color       = '#fdba74';
-  } else {
-    dot.style.background  = '#22c55e';
-    dot.style.boxShadow   = '0 0 8px #22c55e';
-    dot.style.animation   = '';
-    text.textContent       = `✓ Alert ready`;
-    text.style.color       = '#4ade80';
-  }
-}
-
-
-// ============================================================
-// ALERT WIDGET CSS — add to your style.css
-// ============================================================
-/*
-.alert-status-widget {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  padding: 5px 12px;
-  border-radius: 10px;
-  font-size: 0.7rem;
-  font-family: 'Space Mono', monospace;
-  cursor: default;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-}
-
-.alert-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 8px #22c55e;
-  flex-shrink: 0;
-  transition: all 0.3s ease;
-}
-*/
-
-
-// ============================================================
-// HEAT INDEX CALCULATOR (Steadman formula)
-// ============================================================
-function calcHeatIndex(t, h) {
-  if (t < 27) return t;
-  const hi =
-    -8.78469475556 +
-    1.61139411 * t +
-    2.33854883889 * h +
-    -0.14611605 * t * h +
-    -0.012308094 * t * t +
-    -0.016424828 * h * h +
-    0.002211732 * t * t * h +
-    0.00072546 * t * h * h +
-    -0.000003582 * t * t * h * h;
-  return Math.round(hi * 10) / 10;
-}
-
-// ============================================================
-// STATUS HELPERS
-// ============================================================
-function getTempStatus(t) {
-  if (t >= 38) return ['status-hot', 'Danger!'];
-  if (t > 35)  return ['status-hot', 'Very Hot'];
-  if (t > 30)  return ['status-warn', 'Warm'];
-  if (t >= 20) return ['status-ok', 'Normal'];
-  if (t >= 15) return ['status-cold', 'Cool'];
-  return              ['status-freezing', 'Freezing!'];
-}
-
-function getHumiStatus(h) {
-  if (h > 85)  return ['status-hot', 'Very Humid'];
-  if (h > 70)  return ['status-warn', 'Humid'];
-  if (h >= 40) return ['status-ok', 'Normal'];
-  if (h >= 25) return ['status-warn', 'Dry'];
-  return              ['status-cold', 'Very Dry'];
-}
-
-function getHeatStatus(hi) {
-  if (hi >= 38) return ['status-hot', 'Danger Zone'];
-  if (hi >= 35) return ['status-hot', 'Very Hot'];
-  if (hi >= 32) return ['status-warn', 'Caution'];
-  if (hi >= 27) return ['status-ok', 'Comfortable'];
-  if (hi >= 20) return ['status-cold', 'Cool'];
-  return               ['status-freezing', 'Cold!'];
-}
-
-// ============================================================
-// GET TODAY'S DATE RANGE (midnight to now)
-// ============================================================
-function todayRange() {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  return start.toISOString();
-}
 
 // ============================================================
 // FETCH & UPDATE ALL CARDS
@@ -277,21 +194,23 @@ async function fetchLatest() {
 
   // ESP32 connection status
   const secondsAgo = (Date.now() - lastTime.getTime()) / 1000;
-  const espStatus = document.getElementById('espStatus');
-  const espLabel  = document.getElementById('espLabel');
+  const espStatus  = document.getElementById('espStatus');
+  const espLabel   = document.getElementById('espLabel');
   if (espStatus && espLabel) {
     if (secondsAgo < 8) {
-      espStatus.className = 'esp-status connected';
+      espStatus.className  = 'esp-status connected';
       espLabel.textContent = 'ESP32 CONNECTED';
+      espConnected         = true;   // ← allow email alerts
     } else {
-      espStatus.className = 'esp-status disconnected';
+      espStatus.className  = 'esp-status disconnected';
       espLabel.textContent = 'ESP32 OFFLINE';
+      espConnected         = false;  // ← block email alerts
     }
   }
 
   updateThermalState(t, h);
   updateGauge(hi, t);
-  sendEmailAlert(t, h, hi);
+  sendEmailAlert(t, h, hi); // only fires if espConnected === true
 
   // Alert banner
   const banner = document.getElementById('alert-banner');
@@ -301,6 +220,7 @@ async function fetchLatest() {
     banner.classList.remove('show');
   }
 }
+
 
 // ============================================================
 // FETCH TOTAL & TODAY COUNTS
@@ -325,6 +245,7 @@ async function fetchCounts() {
   }
 }
 
+
 // ============================================================
 // FETCH CHART DATA (last 20 readings)
 // ============================================================
@@ -342,6 +263,7 @@ async function fetchChartData() {
   renderHumiChart(rows);
   renderCombinedChart(rows);
 }
+
 
 // ============================================================
 // SVG CHART RENDERER
@@ -481,9 +403,9 @@ function renderCombinedChart(rows) {
     </svg>`;
 }
 
+
 // ============================================================
 // 1-HOUR KEY
-// Groups readings into 1-hour buckets e.g. "Sunday, Mar 29 — 7:00–8:00 AM"
 // ============================================================
 function oneHourKey(dateStr) {
   const d = new Date(dateStr);
@@ -510,7 +432,6 @@ function downloadCSV(rows, filename) {
   a.click();
 }
 
-// Build one data row element
 function makeDataRow(r, visible) {
   const hi = calcHeatIndex(r.temperature, r.humidity);
   const [tClass, tText] = getTempStatus(r.temperature);
@@ -526,7 +447,6 @@ function makeDataRow(r, visible) {
   return tr;
 }
 
-// Build one session header element
 function makeHeaderRow(key, count, expanded) {
   const tr = document.createElement('tr');
   tr.className = 'session-header';
@@ -553,16 +473,13 @@ function makeHeaderRow(key, count, expanded) {
   return tr;
 }
 
-// Attach CSV download + delete listeners
 function attachCSV(headerTr, key, rows) {
-  // CSV download
   headerTr.querySelector('.btn-dl-session').addEventListener('click', (e) => {
     e.stopPropagation();
     downloadCSV(rows, `esp32_${key.replace(/[^a-z0-9]/gi,'_').toLowerCase()}.csv`);
     showToast('⬇ CSV downloaded');
   });
 
-  // Delete group — removes from Supabase, updates counts instantly
   headerTr.querySelector('.btn-del-session').addEventListener('click', async (e) => {
     e.stopPropagation();
     const count = rows.length;
@@ -579,7 +496,6 @@ function attachCSV(headerTr, key, rows) {
       return;
     }
 
-    // Remove all data rows belonging to this group from DOM
     let next = headerTr.nextElementSibling;
     while (next && !next.classList.contains('session-header')) {
       const toRemove = next;
@@ -588,15 +504,12 @@ function attachCSV(headerTr, key, rows) {
     }
     headerTr.remove();
 
-    // ── Optimistic UI update ──
-    // Instantly subtract deleted count from Total Readings card
     const totalEl = document.querySelector('.total-card .card-value');
     if (totalEl) {
       const current = parseInt(totalEl.textContent.replace(/,/g, '')) || 0;
       totalEl.textContent = Math.max(0, current - count).toLocaleString();
     }
 
-    // Also subtract from Today's Readings if the deleted group was from today
     const todayEl = document.querySelector('.today-card .card-value');
     if (todayEl) {
       const rowDate   = new Date(rows[0].created_at).toDateString();
@@ -607,9 +520,7 @@ function attachCSV(headerTr, key, rows) {
       }
     }
 
-    // Confirm with real DB count after 1 second to ensure accuracy
     setTimeout(fetchCounts, 1000);
-
     showToast(`🗑 Deleted ${count} reading${count !== 1 ? 's' : ''}`);
   });
 }
@@ -623,7 +534,6 @@ async function fetchTable() {
   const { data, error } = await query;
   if (error || !data) return;
 
-  // Group by 1-hour key
   const groups = {};
   const groupOrder = [];
   data.forEach(r => {
@@ -650,7 +560,6 @@ async function fetchTable() {
     `Showing ${data.length} entries in ${groupOrder.length} intervals`;
 }
 
-// Called on each new realtime INSERT
 function liveAddRow(record) {
   const tbody = document.querySelector('table tbody');
   const liveHeader = tbody.querySelector('.session-current');
@@ -665,6 +574,7 @@ function liveAddRow(record) {
     fetchTable();
   }
 }
+
 
 // ============================================================
 // THERMAL STATE
@@ -694,6 +604,7 @@ function updateThermalState(temperature, humidity) {
   if (lbl) lbl.textContent = thermalLabels[cls] || '🟢 Normal';
 }
 
+
 // ============================================================
 // REAL-TIME SUBSCRIPTION
 // ============================================================
@@ -707,6 +618,7 @@ db.channel('esp32-live')
   })
   .subscribe();
 
+
 // ============================================================
 // INITIAL LOAD
 // ============================================================
@@ -717,6 +629,7 @@ fetchTable();
 
 // Poll connection status every 5s
 setInterval(fetchLatest, 5000);
+
 
 // ============================================================
 // DOWNLOAD NAV
@@ -749,8 +662,6 @@ document.getElementById('dlAllBtn').addEventListener('click', async () => {
 // ============================================================
 // TABLE FILTER, EXPORT, CLEAR LOG, STATS
 // ============================================================
-
-// Filter dropdown toggle
 const filterBtn  = document.getElementById('filterBtn');
 const filterMenu = document.getElementById('filterMenu');
 filterBtn.addEventListener('click', (e) => {
@@ -771,7 +682,6 @@ document.querySelectorAll('.filter-item').forEach(item => {
   });
 });
 
-// Export table CSV
 document.getElementById('exportTableBtn').addEventListener('click', async () => {
   let query = db.from(TABLE).select('*').order('created_at', { ascending: false });
   if (currentFilter === 'session') query = query.gte('created_at', sessionStart);
@@ -780,7 +690,6 @@ document.getElementById('exportTableBtn').addEventListener('click', async () => 
   if (data) { downloadCSV(data, 'esp32_readings.csv'); showToast('⬇ CSV exported'); }
 });
 
-// Clear log (clears table display only, not Supabase data)
 document.getElementById('clearLogBtn').addEventListener('click', () => {
   document.querySelector('table tbody').innerHTML =
     '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Log cleared. New readings will appear automatically.</td></tr>';
@@ -791,7 +700,6 @@ document.getElementById('clearLogBtn').addEventListener('click', () => {
   showToast('✕ Log cleared');
 });
 
-// Update stats bar
 function updateStats(data) {
   if (!data || !data.length) return;
   const temps = data.map(r => r.temperature);
@@ -803,6 +711,7 @@ function updateStats(data) {
   document.getElementById('statMax').textContent  = max + '°C';
   document.getElementById('statAvg').textContent  = avg + '°C';
 }
+
 
 // ============================================================
 // HEAT STRESS GAUGE
@@ -856,6 +765,7 @@ function updateGauge(hi, t) {
   if (lvl !== lastGaugeLevel) { lastGaugeLevel = lvl; }
 }
 
+
 // ============================================================
 // SOUND TOGGLE + AUDIO ALERT
 // ============================================================
@@ -893,6 +803,7 @@ soundBtn.addEventListener('click', () => {
     showToast('🔇 Sound OFF');
   }
 });
+
 
 // ============================================================
 // TOAST
