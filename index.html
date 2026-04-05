@@ -3,413 +3,458 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ESP32 Dashboard — Thermal-Aware Design</title>
+  <title>TROYIKZ — Heat Safety Monitor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <!-- Theme system loads BEFORE style.css so thermal states in style.css win -->
-  <link rel="stylesheet" href="themes.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="thermal-normal" data-theme="cyber-dark">
 
-  <!-- Navigation -->
-  <nav>
+  <!-- ══ NAVIGATION ══ -->
+  <nav id="mainNav">
     <div class="nav-left">
-      <div class="logo">TROYIKZ DASHBOARD</div>
-      <div class="live-badge">
-        <span class="dot"></span>
-        LIVE
-      </div>
-      <div class="esp-status connected" id="espStatus">
-        <span class="esp-dot" id="espDot"></span>
-        <span id="espLabel">ESP32 CONNECTED</span>
+      <div class="logo">
+        <span class="logo-gem">◈</span>
+        <span class="logo-text">TROYIKZ</span>
+        <span class="logo-sub">HEAT MONITOR</span>
       </div>
     </div>
 
-    <div class="nav-center">
-      <div class="gauge-widget" id="gaugeWidget">
-        <div class="gauge-title">HEAT STRESS</div>
-        <div class="gauge-bar-track">
-          <div class="gauge-segment" style="background:#22c55e;" id="arc0"></div>
-          <div class="gauge-segment" style="background:#86efac;" id="arc1"></div>
-          <div class="gauge-segment" style="background:#facc15;" id="arc2"></div>
-          <div class="gauge-segment" style="background:#f97316;" id="arc3"></div>
-          <div class="gauge-segment" style="background:#ef4444;" id="arc4"></div>
-          <div class="gauge-indicator" id="gaugeNeedle"></div>
-        </div>
-        <div class="gauge-labels-row">
-          <span>LOW</span><span>NORMAL</span><span>CAUTION</span><span>HOT</span><span>DANGER</span>
-        </div>
-        <div class="gauge-current" id="gaugeLabel">● NORMAL</div>
+    <div class="nav-status-pills">
+      <div class="status-pill" id="livePill" data-state="connecting">
+        <span class="pill-dot" id="liveDot"></span>
+        <span class="pill-label" id="liveLabel">CONNECTING</span>
       </div>
-
-      <div class="theme-picker" id="themePicker">
-      <button class="theme-btn" id="themeBtn" title="Change theme">
-        <span class="theme-btn-icon">🎨</span>
-        <span class="theme-btn-swatch" id="themeSwatch"></span>
-        <span class="theme-btn-label" id="themeBtnLabel">THEME</span>
-        <span class="theme-btn-arrow">▾</span>
-      </button>
-      <div class="theme-dropdown" id="themeDropdown">
-        <div class="theme-dropdown-header">
-          <div class="theme-dropdown-title">COLOR THEMES</div>
-          <div class="theme-dropdown-count">12 THEMES</div>
-        </div>
-        <!-- Populated by JS -->
-        <div id="themeGridContainer"></div>
+      <div class="status-pill pill-wifi" id="wifiPill">
+        <span class="pill-icon">📡</span>
+        <span class="pill-label" id="wifiLabel">WiFi: Excellent</span>
       </div>
-    </div>
-
-    </div>
-    <div class="nav-right">
-      <div class="wifi-widget">
-        <div class="wifi-bars excellent">
-          <span></span><span></span><span></span><span></span>
-        </div>
-        <span class="wifi-label">Excellent</span>
+      <div class="status-pill pill-time" id="timePill">
+        <span class="pill-icon">⏱</span>
+        <span class="pill-label" id="lastUpdate">Last Update: —</span>
       </div>
-      <span class="last-update">Last: —</span>
-      <div class="live-badge" id="thermalLabel" style="font-size:0.7rem;">🟢 Normal</div>
-      <button class="btn-sound sound-on" id="soundBtn">
-        <span>🔊</span> Sound
-      </button>
+      <div class="status-pill pill-heat" id="heatPill" data-risk="safe">
+        <span class="pill-icon">🌡</span>
+        <span class="pill-label" id="heatPillLabel">Heat: —</span>
+      </div>
+      <div class="status-pill pill-sound" id="soundPill">
+        <button class="pill-btn" id="soundBtn">
+          <span class="pill-icon" id="soundIcon">🔊</span>
+          <span class="pill-label">Sound: ON</span>
+        </button>
+      </div>
+      <div class="status-pill pill-theme theme-picker" id="themePicker">
+        <button class="pill-btn theme-trigger" id="themeBtn">
+          <span class="pill-icon">◐</span>
+          <span class="pill-label">Theme</span>
+          <span class="t-arrow">▾</span>
+        </button>
+        <div class="theme-dropdown" id="themeDropdown">
+          <div class="td-header"><span class="td-title">COLOR THEMES</span></div>
+          <div id="themeGridContainer"></div>
+        </div>
+      </div>
     </div>
   </nav>
 
-  <!-- Alert Banner -->
-  <div id="alert-banner">
-    <span>⚠️</span>
-    <span>HEAT WARNING: Temperature exceeds safe limits! Take immediate action.</span>
+  <!-- ══ ALERT BANNER ══ -->
+  <div class="alert-banner" id="alertBanner">
+    <div class="ab-left">
+      <span class="ab-level-dot"></span>
+      <div>
+        <div class="ab-title" id="alertTitle">HEAT WARNING</div>
+        <div class="ab-msg" id="alertMsg">Temperature exceeds safe limits.</div>
+      </div>
+    </div>
+    <button class="ab-mute" id="alertMute" title="Mute alert">✕</button>
+    <div class="ab-shine"></div>
   </div>
 
-  <!-- Main Content -->
   <main>
-    <div class="section-label">Current Readings</div>
 
-    <div class="cards">
-      <div class="card temp-card">
-        <div class="card-label">Temperature</div>
-        <div class="card-value" id="tempValue">—<span>°C</span></div>
-        <div class="card-sub">Range: <b>18-32°C</b></div>
-        <span class="status-pill status-ok" id="tempStatus">—</span>
+    <!-- ══ TOP STATUS BAR ══ -->
+    <div class="top-statusbar">
+      <div class="tsb-left">
+        <div class="esp-badge" id="espBadge" data-state="connecting">
+          <span class="esp-dot" id="espDot"></span>
+          <span id="espLabel">ESP32: Connecting…</span>
+        </div>
+        <div class="freshness-chip" id="freshnessBadge" data-state="ok">
+          <span id="freshnessText">—</span>
+        </div>
       </div>
-
-      <div class="card humi-card">
-        <div class="card-label">Humidity</div>
-        <div class="card-value" id="humiValue">—<span>%</span></div>
-        <div class="card-sub">Range: <b>40-70%</b></div>
-        <span class="status-pill status-ok" id="humiStatus">—</span>
-      </div>
-
-      <div class="card heat-card">
-        <div class="card-label">Heat Index</div>
-        <div class="card-value" id="heatValue">—<span>°C</span></div>
-        <div class="card-sub">Feels like</div>
-        <span class="status-pill status-ok" id="heatStatus">—</span>
-      </div>
-
-      <div class="card total-card">
-        <div class="card-label">Total Readings</div>
-        <div class="card-value">—</div>
-        <div class="card-sub">All time</div>
-      </div>
-
-      <div class="card today-card">
-        <div class="card-label">Readings Today</div>
-        <div class="card-value">—</div>
-        <div class="card-sub">Every 3 seconds</div>
+      <div class="tsb-right">
+        <div class="sys-chip">
+          <span class="sc-icon">📡</span>
+          <span class="sc-label">Signal: Strong</span>
+        </div>
+        <div class="sys-chip" id="uptimeChip">
+          <span class="sc-icon">⚡</span>
+          <span class="sc-label" id="uptimeLabel">Uptime: —</span>
+        </div>
+        <div class="sys-chip" id="syncChip">
+          <span class="sc-icon">🔄</span>
+          <span class="sc-label" id="syncLabel">DB: Synced</span>
+        </div>
       </div>
     </div>
 
-    <div class="section-label">History</div>
+    <!-- ══ HERO SECTION ══ -->
+    <section class="hero-section">
+      <div class="hi-card" id="hiCard">
+        <div class="hi-card-glow"></div>
+        <div class="hi-card-inner">
+          <div class="hi-header">
+            <div class="risk-badge" id="riskBadge">
+              <span class="rb-pulse"></span>
+              <span id="riskLabel">LOADING</span>
+            </div>
+            <div class="hi-trend" id="hiTrend">—</div>
+          </div>
+          <div class="hi-main">
+            <div class="hi-label-row">
+              <span class="hi-sup-label">HEAT INDEX</span>
+              <span class="hi-feels-label">Perceived Temperature</span>
+            </div>
+            <div class="hi-value-row">
+              <span class="hi-number" id="heroHI">—</span>
+              <span class="hi-unit">°C</span>
+            </div>
+          </div>
+          <div class="hi-risk-bar">
+            <div class="hrb-track">
+              <div class="hrb-seg hrb-safe"     id="hrs0" title="Safe"><span>SAFE</span></div>
+              <div class="hrb-seg hrb-caution"  id="hrs1" title="Caution"><span>CAUTION</span></div>
+              <div class="hrb-seg hrb-xcaution" id="hrs2" title="Ext. Caution"><span>EXT</span></div>
+              <div class="hrb-seg hrb-danger"   id="hrs3" title="Danger"><span>DANGER</span></div>
+              <div class="hrb-seg hrb-extreme"  id="hrs4" title="Extreme Danger"><span>EXTREME</span></div>
+            </div>
+            <div class="hrb-labels">
+              <span>&lt;27°C</span><span>27</span><span>33</span><span>42</span><span>52+</span>
+            </div>
+          </div>
+          <div class="hi-advice" id="riskAdvice">Awaiting sensor data…</div>
+
+          <!-- ✅ IMPROVEMENT 1: Recommendations Box -->
+          <div class="recommendations-box" id="recommendationsBox">
+            <div class="rec-header">
+              <span class="rec-icon">💡</span>
+              <span class="rec-title">RECOMMENDED ACTIONS</span>
+            </div>
+            <div class="rec-grid" id="recGrid">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card" id="mcTemp">
+          <div class="mc-top">
+            <span class="mc-icon-label">🌡 TEMPERATURE</span>
+            <span class="mc-status-badge" id="tempStatus">—</span>
+          </div>
+          <div class="mc-value-row">
+            <span class="mc-big" id="tempValue">—</span>
+            <span class="mc-unit">°C</span>
+            <span class="mc-trend" id="tempTrend">→</span>
+          </div>
+          <div class="mc-bar-wrap">
+            <div class="mc-bar-wrap-inner"><div class="mc-bar" id="tempBar"></div></div>
+            <div class="mc-bar-labels"><span>0°</span><span>Safe: 20–30°</span><span>50°</span></div>
+          </div>
+        </div>
+
+        <div class="metric-card" id="mcHumi">
+          <div class="mc-top">
+            <span class="mc-icon-label">💧 HUMIDITY</span>
+            <span class="mc-status-badge" id="humiStatus">—</span>
+          </div>
+          <div class="mc-value-row">
+            <span class="mc-big" id="humiValue">—</span>
+            <span class="mc-unit">%</span>
+            <span class="mc-trend" id="humiTrend">→</span>
+          </div>
+          <div class="mc-bar-wrap">
+            <div class="mc-bar-wrap-inner"><div class="mc-bar" id="humiBar"></div></div>
+            <div class="mc-bar-labels"><span>0%</span><span>Ideal: 40–60%</span><span>100%</span></div>
+          </div>
+        </div>
+
+        <div class="metric-card metric-stat">
+          <div class="mc-top"><span class="mc-icon-label">📊 TOTAL READINGS</span></div>
+          <div class="mc-stat-val" id="totalValue">—</div>
+          <div class="mc-stat-sub">All time · database</div>
+        </div>
+
+        <div class="metric-card metric-stat">
+          <div class="mc-top"><span class="mc-icon-label">📅 TODAY</span></div>
+          <div class="mc-stat-val" id="todayValue">—</div>
+          <div class="mc-stat-sub" id="todaySubLabel">Every ~3 seconds</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ✅ IMPROVEMENT 5: Device & Location Info -->
+    <div class="device-info-bar">
+      <div class="dib-section">
+        <span class="dib-icon">📍</span>
+        <div class="dib-content">
+          <span class="dib-label">LOCATION</span>
+          <span class="dib-value">Barangay Tankulan, CDO</span>
+        </div>
+      </div>
+      <div class="dib-divider"></div>
+      <div class="dib-section">
+        <span class="dib-icon">🔌</span>
+        <div class="dib-content">
+          <span class="dib-label">DEVICE ID</span>
+          <span class="dib-value">ESP32-01</span>
+        </div>
+      </div>
+      <div class="dib-divider"></div>
+      <div class="dib-section">
+        <span class="dib-icon">📌</span>
+        <div class="dib-content">
+          <span class="dib-label">INSTALLED AT</span>
+          <span class="dib-value">Covered Court</span>
+        </div>
+      </div>
+      <div class="dib-divider"></div>
+      <div class="dib-section">
+        <span class="dib-icon">🛠</span>
+        <div class="dib-content">
+          <span class="dib-label">LAST MAINTENANCE</span>
+          <span class="dib-value">March 20, 2026</span>
+        </div>
+      </div>
+      <div class="dib-divider"></div>
+      <div class="dib-section">
+        <span class="dib-icon">👤</span>
+        <div class="dib-content">
+          <span class="dib-label">OPERATOR</span>
+          <span class="dib-value">TROYIKZ System</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CHARTS SECTION ══ -->
+    <div class="section-hdr">
+      <span class="sh-bar"></span>
+      <span class="sh-title">LIVE HISTORY</span>
+      <span class="sh-sub">Last 20 readings · hover for details</span>
+    </div>
+
+    <!-- ✅ IMPROVEMENT 6: Chart time filter + stats -->
+    <div class="chart-controls-bar">
+      <div class="chart-time-filters">
+        <span class="ctf-label">TIME RANGE:</span>
+        <button class="ctf-btn active" data-range="20">Last 20</button>
+        <button class="ctf-btn" data-range="50">Last Hour</button>
+        <button class="ctf-btn" data-range="200">Today</button>
+        <button class="ctf-btn" data-range="500">Week</button>
+      </div>
+      <div class="chart-summary-stats">
+        <span class="css-item">MIN HI: <b id="chartMinHI" class="sv-ok">—</b></span>
+        <span class="css-item">MAX HI: <b id="chartMaxHI" class="sv-hot">—</b></span>
+        <span class="css-item">AVG HI: <b id="chartAvgHI" class="sv-warn">—</b></span>
+        <span class="css-item">AVG TEMP: <b id="chartAvgTemp" class="sv-temp">—</b></span>
+      </div>
+    </div>
+
     <div class="charts-row">
       <div class="chart-card">
-        <div class="chart-title">
-          Temperature History
+        <div class="chart-hdr">
+          <span class="chart-title">Heat Index &amp; Temperature</span>
           <div class="chart-legend">
-            <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span> Temp</div>
-            <div class="legend-item"><span class="legend-dot" style="background:#e11d48;"></span> Heat Index</div>
+            <span><span class="cleg-dot" style="background:#e11d48"></span>Heat Index</span>
+            <span><span class="cleg-dot" style="background:#f97316"></span>Temperature</span>
           </div>
         </div>
-        <div class="chart-wrap" id="tempChart"></div>
+        <div class="chart-body" id="tempChart"></div>
+        <div class="chart-tip" id="tempTip"></div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">
-          Humidity History
+        <div class="chart-hdr">
+          <span class="chart-title">Humidity</span>
           <div class="chart-legend">
-            <div class="legend-item"><span class="legend-dot" style="background:#38bdf8;"></span> Humidity</div>
+            <span><span class="cleg-dot" style="background:#38bdf8"></span>Humidity</span>
+            <span><span class="cleg-dot" style="background:#facc15; opacity:0.6"></span>Ideal zone</span>
           </div>
         </div>
-        <div class="chart-wrap" id="humiChart"></div>
+        <div class="chart-body" id="humiChart"></div>
+        <div class="chart-tip" id="humiTip"></div>
       </div>
     </div>
 
-    <div class="charts-row" style="grid-template-columns:1fr;">
-      <div class="chart-card">
-        <div class="chart-title">
-          Temperature &amp; Humidity Overview
-          <div class="chart-legend">
-            <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span> Temperature</div>
-            <div class="legend-item"><span class="legend-dot" style="background:#38bdf8;"></span> Humidity</div>
-          </div>
-        </div>
-        <div class="chart-wrap" id="combinedChart" style="height:220px;"></div>
-      </div>
+    <!-- ══ DATA TABLE ══ -->
+    <div class="section-hdr">
+      <span class="sh-bar"></span>
+      <span class="sh-title">READING LOG</span>
+      <span class="sh-sub" id="tableCount">— entries</span>
     </div>
 
-    <!-- Data Table -->
     <div class="table-card">
-      <div class="table-header">
-        <div class="table-title">Reading History</div>
-        <div class="table-count" id="tableCount">Showing 0 entries</div>
-      </div>
-      <div class="dl-nav">
-        <div class="dl-nav-left">
-          <select class="dl-select" id="dlSelect">
+      <div class="table-toolbar">
+        <div class="tt-l">
+          <div class="filter-wrap">
+            <button class="btn-filter" id="filterBtn">ALL RECORDS ▾</button>
+            <div class="filter-menu" id="filterMenu">
+              <div class="fi active" data-limit="0">All Records</div>
+              <div class="fi" data-limit="10">Last 10</div>
+              <div class="fi" data-limit="50">Last 50</div>
+              <div class="fi" data-limit="100">Last 100</div>
+              <div class="fi" data-limit="session">Session Only</div>
+            </div>
+          </div>
+        </div>
+        <div class="tt-r">
+          <select class="dl-sel" id="dlSelect">
             <option value="all">All Records</option>
             <option value="current">Current Session</option>
             <option value="10">Last 10 min</option>
             <option value="30">Last 30 min</option>
             <option value="60">Last 60 min</option>
           </select>
-          <button class="btn-dl-all" id="dlAllBtn">⬇ Download CSV</button>
-        </div>
-        <div class="dl-nav-right">
-          <span class="dl-hint">or use ⬇ CSV on each row to download that interval</span>
+          <button class="btn-dl" id="dlAllBtn">⬇ Export CSV</button>
+          <button class="btn-clr" id="clearLogBtn">✕ Clear</button>
         </div>
       </div>
-      <div class="table-scroll">
+
+      <div class="tbl-scroll">
         <table>
           <thead>
             <tr>
-              <th>Timestamp</th>
+              <th>Time</th>
+              <th>Heat Index</th>
               <th>Temperature</th>
               <th>Humidity</th>
-              <th>Heat Index</th>
-              <th>Status</th>
+              <th>Risk Level</th>
+              <th></th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">
-                Loading data…
-              </td>
-            </tr>
+          <tbody id="tableBody">
+            <tr><td colspan="6" class="tbl-empty">Loading…</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="table-toolbar">
-        <div class="toolbar-left">
-          <div class="filter-dropdown">
-            <button class="btn-filter" id="filterBtn">ALL RECORDS ▾</button>
-            <div class="filter-menu" id="filterMenu">
-              <div class="filter-item active" data-limit="0">All Records</div>
-              <div class="filter-item" data-limit="10">Last 10</div>
-              <div class="filter-item" data-limit="50">Last 50</div>
-              <div class="filter-item" data-limit="100">Last 100</div>
-              <div class="filter-item" data-limit="session">Session Only</div>
-            </div>
-          </div>
-        </div>
-        <div class="toolbar-right">
-          <button class="btn-export-table" id="exportTableBtn">⬇ EXPORT CSV</button>
-          <button class="btn-clear-log" id="clearLogBtn">✕ CLEAR LOG</button>
-        </div>
-      </div>
+
       <div class="stats-bar">
         <span>LOGGED <b id="statLogged">0</b></span>
-        <span>MIN TEMP <b id="statMin" class="td-temp">—</b></span>
-        <span>MAX TEMP <b id="statMax" class="td-hot">—</b></span>
-        <span>AVG TEMP <b id="statAvg" class="td-temp">—</b></span>
+        <span>MIN HI <b id="statMin" class="sv-ok">—</b></span>
+        <span>MAX HI <b id="statMax" class="sv-hot">—</b></span>
+        <span>AVG HI <b id="statAvg" class="sv-warn">—</b></span>
+        <span>AVG TEMP <b id="statTemp" class="sv-temp">—</b></span>
       </div>
     </div>
+
   </main>
 
-  <div id="toast">✓ Done</div>
+  <!-- Threshold Modal -->
+  <div class="modal-overlay" id="thresholdModal">
+    <div class="modal-inner">
+      <div class="modal-title">⚙ SET ALERT THRESHOLD</div>
+      <div class="modal-body">
+        <label class="modal-label">Temperature Threshold (°C)</label>
+        <input type="number" class="modal-input" id="thresholdInput" value="38" min="25" max="50" step="0.5">
+        <div class="modal-hint">Alert email sends when temperature OR heat index exceeds this value.</div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-cancel" id="thresholdCancel">Cancel</button>
+        <button class="modal-btn modal-save" id="thresholdSave">Save Threshold</button>
+      </div>
+    </div>
+  </div>
 
-  <!-- ═══════════════════════════════════════════
-       THEME PICKER JS
-       Runs before script.js to apply saved theme instantly
-       ═══════════════════════════════════════════ -->
+  <!-- Offline overlay -->
+  <div class="offline-overlay" id="offlineOverlay">
+    <div class="oo-inner">
+      <div class="oo-icon">📡</div>
+      <div class="oo-title">ESP32 OFFLINE</div>
+      <div class="oo-sub" id="offlineSub">No data received</div>
+      <div class="oo-hint">Check WiFi connection and sensor power</div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- Theme System -->
   <script>
-  (function() {
-    const THEMES = [
-      // ── Dark themes ──
-      {
-        id: 'cyber-dark', name: 'Cyber Dark', dark: true,
-        swatches: ['#0a0d14', '#f97316', '#38bdf8', '#ef4444'],
-        desc: 'Default'
-      },
-      {
-        id: 'midnight', name: 'Midnight', dark: true,
-        swatches: ['#02050f', '#3b82f6', '#34d399', '#f472b6'],
-        desc: 'Electric blue'
-      },
-      {
-        id: 'matrix', name: 'Matrix', dark: true,
-        swatches: ['#000800', '#00e676', '#69ff47', '#ff6d00'],
-        desc: 'Neon green'
-      },
-      {
-        id: 'void', name: 'Void', dark: true,
-        swatches: ['#06040e', '#a78bfa', '#818cf8', '#f472b6'],
-        desc: 'Deep purple'
-      },
-      {
-        id: 'crimson', name: 'Crimson', dark: true,
-        swatches: ['#0e0205', '#fb7185', '#f9a8d4', '#fbbf24'],
-        desc: 'Blood red'
-      },
-      {
-        id: 'ocean', name: 'Ocean', dark: true,
-        swatches: ['#020c12', '#06b6d4', '#34d399', '#818cf8'],
-        desc: 'Deep sea'
-      },
-      {
-        id: 'ember', name: 'Ember', dark: true,
-        swatches: ['#0e0800', '#fbbf24', '#f97316', '#a3e635'],
-        desc: 'Molten gold'
-      },
-      {
-        id: 'synthwave', name: 'Synthwave', dark: true,
-        swatches: ['#04000e', '#e879f9', '#22d3ee', '#fb7185'],
-        desc: 'Retro neon'
-      },
-      // ── Light themes ──
-      {
-        id: 'arctic', name: 'Arctic', dark: false,
-        swatches: ['#eef4ff', '#2563eb', '#0369a1', '#dc2626'],
-        desc: 'Ice blue'
-      },
-      {
-        id: 'paper', name: 'Paper', dark: false,
-        swatches: ['#f9f8f5', '#374151', '#065f46', '#991b1b'],
-        desc: 'Minimal'
-      },
-      {
-        id: 'sakura', name: 'Sakura', dark: false,
-        swatches: ['#fff5f8', '#db2777', '#9d174d', '#b91c1c'],
-        desc: 'Cherry blossom'
-      },
-      {
-        id: 'forest', name: 'Forest', dark: false,
-        swatches: ['#f0f8f0', '#16a34a', '#0f766e', '#b91c1c'],
-        desc: 'Sage green'
-      },
+  (function(){
+    const THEMES=[
+      {id:'cyber-dark',   name:'Cyber Dark',   dark:true,  sw:['#0a0d14','#f97316','#38bdf8','#ef4444'],
+        vars:{'--accent':'#f97316','--accent2':'#38bdf8','--accent3':'#ef4444','--bg':'#0a0d14','--surface':'#0f1319','--surface2':'#161c26','--surface3':'#1c232f','--border':'#232d3d','--text':'#e8edf5','--muted':'#5a6a82'}},
+      {id:'midnight',     name:'Midnight Blue', dark:true,  sw:['#02050f','#3b82f6','#34d399','#f472b6'],
+        vars:{'--accent':'#3b82f6','--accent2':'#34d399','--accent3':'#f472b6','--bg':'#020814','--surface':'#060f1e','--surface2':'#0c1628','--surface3':'#122032','--border':'#1a2a40','--text':'#dbeafe','--muted':'#4a6080'}},
+      {id:'matrix',       name:'Matrix',        dark:true,  sw:['#000800','#00e676','#69ff47','#ff6d00'],
+        vars:{'--accent':'#00e676','--accent2':'#69ff47','--accent3':'#ff6d00','--bg':'#010801','--surface':'#040d04','--surface2':'#081208','--surface3':'#0c180c','--border':'#144014','--text':'#ccffcc','--muted':'#3a603a'}},
+      {id:'void',         name:'Void Purple',   dark:true,  sw:['#06040e','#a78bfa','#818cf8','#f472b6'],
+        vars:{'--accent':'#a78bfa','--accent2':'#818cf8','--accent3':'#f472b6','--bg':'#060410','--surface':'#0c0820','--surface2':'#120e2e','--surface3':'#18143c','--border':'#241c48','--text':'#ede9fe','--muted':'#5c4e80'}},
+      {id:'crimson',      name:'Crimson',       dark:true,  sw:['#0e0205','#fb7185','#f9a8d4','#fbbf24'],
+        vars:{'--accent':'#fb7185','--accent2':'#f9a8d4','--accent3':'#fbbf24','--bg':'#0e0308','--surface':'#180610','--surface2':'#220a18','--surface3':'#2c0e20','--border':'#3c1428','--text':'#ffe4e6','--muted':'#7c3048'}},
+      {id:'ocean',        name:'Ocean Depths',  dark:true,  sw:['#020c12','#06b6d4','#34d399','#818cf8'],
+        vars:{'--accent':'#06b6d4','--accent2':'#34d399','--accent3':'#818cf8','--bg':'#020c14','--surface':'#061420','--surface2':'#0a1e2e','--surface3':'#0e283c','--border':'#143448','--text':'#cffafe','--muted':'#3a6070'}},
+      {id:'ember',        name:'Ember',         dark:true,  sw:['#0e0800','#fbbf24','#f97316','#a3e635'],
+        vars:{'--accent':'#fbbf24','--accent2':'#f97316','--accent3':'#a3e635','--bg':'#0e0800','--surface':'#181008','--surface2':'#221810','--surface3':'#2c2018','--border':'#3c2c18','--text':'#fef3c7','--muted':'#7c5c30'}},
+      {id:'synthwave',    name:'Synthwave',     dark:true,  sw:['#04000e','#e879f9','#22d3ee','#fb7185'],
+        vars:{'--accent':'#e879f9','--accent2':'#22d3ee','--accent3':'#fb7185','--bg':'#04000e','--surface':'#090416','--surface2':'#0e0820','--surface3':'#140c2c','--border':'#200e3c','--text':'#fae8ff','--muted':'#6c4880'}},
+      {id:'arctic',       name:'Arctic',        dark:false, sw:['#eef4ff','#2563eb','#0369a1','#dc2626'],
+        vars:{'--accent':'#2563eb','--accent2':'#0369a1','--accent3':'#dc2626','--bg':'#f0f6ff','--surface':'#ffffff','--surface2':'#f0f6ff','--surface3':'#e4eef9','--border':'#bdd3ee','--text':'#0f1b2e','--muted':'#5a7a9a'}},
+      {id:'paper',        name:'Paper',         dark:false, sw:['#f9f8f5','#374151','#065f46','#991b1b'],
+        vars:{'--accent':'#374151','--accent2':'#065f46','--accent3':'#991b1b','--bg':'#f9f8f5','--surface':'#ffffff','--surface2':'#f3f1ec','--surface3':'#ece8e0','--border':'#d4cfc4','--text':'#1c1816','--muted':'#6b6358'}},
+      {id:'sakura',       name:'Sakura',        dark:false, sw:['#fff5f8','#db2777','#9d174d','#b91c1c'],
+        vars:{'--accent':'#db2777','--accent2':'#9d174d','--accent3':'#be123c','--bg':'#fff5f8','--surface':'#ffffff','--surface2':'#ffeef3','--surface3':'#ffe0ea','--border':'#fbbad0','--text':'#3b0a22','--muted':'#8c4060'}},
+      {id:'forest',       name:'Forest',        dark:false, sw:['#f0f8f0','#16a34a','#0f766e','#b91c1c'],
+        vars:{'--accent':'#16a34a','--accent2':'#0f766e','--accent3':'#b91c1c','--bg':'#f0f8f2','--surface':'#ffffff','--surface2':'#e8f5eb','--surface3':'#d8eedc','--border':'#b2d8b8','--text':'#0c200f','--muted':'#4a705a'}},
     ];
+    const KEY='troyikz-theme-v2';
+    let cur=localStorage.getItem(KEY)||'cyber-dark';
 
-    const STORAGE_KEY = 'troyikz-theme';
-    let currentTheme  = localStorage.getItem(STORAGE_KEY) || 'cyber-dark';
-
-    // Apply theme immediately to avoid flash
-    document.body.dataset.theme = currentTheme;
-
-    function applyTheme(id) {
-      currentTheme = id;
-      document.body.dataset.theme = id;
-      localStorage.setItem(STORAGE_KEY, id);
-
-      // Update button swatch
-      const theme = THEMES.find(t => t.id === id);
-      const swatch = document.getElementById('themeSwatch');
-      const label  = document.getElementById('themeBtnLabel');
-      if (swatch && theme) swatch.style.background = theme.swatches[1];
-      if (label  && theme) label.textContent = theme.name.toUpperCase();
-
-      // Update active card
-      document.querySelectorAll('.theme-card').forEach(card => {
-        card.classList.toggle('active', card.dataset.theme === id);
-      });
+    function apply(id){
+      cur=id;
+      const t=THEMES.find(x=>x.id===id);
+      if(!t) return;
+      localStorage.setItem(KEY,id);
+      document.body.dataset.theme=id;
+      const root=document.documentElement;
+      Object.entries(t.vars).forEach(([k,v])=>root.style.setProperty(k,v));
+      document.querySelectorAll('.theme-card').forEach(c=>c.classList.toggle('active',c.dataset.theme===id));
+      document.body.classList.toggle('light-mode', !t.dark);
     }
 
-    function buildGrid() {
-      const container = document.getElementById('themeGridContainer');
-      if (!container) return;
-
-      const darkThemes  = THEMES.filter(t => t.dark);
-      const lightThemes = THEMES.filter(t => !t.dark);
-
-      let html = '';
-
-      // Dark section
-      html += '<div class="theme-section">';
-      html += '<div class="theme-section-label">DARK</div>';
-      html += '<div class="theme-grid">';
-      darkThemes.forEach(t => {
-        html += `
-          <div class="theme-card ${t.id === currentTheme ? 'active' : ''}" data-theme="${t.id}" title="${t.desc}">
-            <div class="theme-preview">
-              <span style="background:${t.swatches[0]}"></span>
-              <span style="background:${t.swatches[1]}"></span>
-              <span style="background:${t.swatches[2]}"></span>
-              <span style="background:${t.swatches[3]}"></span>
-            </div>
-            <div class="theme-card-name">${t.name}</div>
-          </div>`;
-      });
-      html += '</div></div>';
-
-      // Divider
-      html += '<div class="theme-divider"></div>';
-
-      // Light section
-      html += '<div class="theme-section">';
-      html += '<div class="theme-section-label">LIGHT</div>';
-      html += '<div class="theme-grid">';
-      lightThemes.forEach(t => {
-        html += `
-          <div class="theme-card ${t.id === currentTheme ? 'active' : ''}" data-theme="${t.id}" title="${t.desc}">
-            <div class="theme-preview" style="border-color:rgba(0,0,0,0.15)">
-              <span style="background:${t.swatches[0]}"></span>
-              <span style="background:${t.swatches[1]}"></span>
-              <span style="background:${t.swatches[2]}"></span>
-              <span style="background:${t.swatches[3]}"></span>
-            </div>
-            <div class="theme-card-name">${t.name}</div>
-          </div>`;
-      });
-      html += '</div></div>';
-
-      container.innerHTML = html;
-
-      // Click handlers
-      container.querySelectorAll('.theme-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-          e.stopPropagation();
-          applyTheme(card.dataset.theme);
-          // Tiny bounce feedback
-          card.style.transform = 'scale(0.95)';
-          setTimeout(() => card.style.transform = '', 120);
-        });
-      });
+    function build(){
+      const el=document.getElementById('themeGridContainer'); if(!el) return;
+      const dark=THEMES.filter(t=>t.dark), light=THEMES.filter(t=>!t.dark);
+      const mkRow=arr=>arr.map(t=>`<div class="theme-card ${t.id===cur?'active':''}" data-theme="${t.id}">
+        <div class="theme-preview">
+          <span style="background:${t.sw[0]}"></span><span style="background:${t.sw[1]}"></span>
+          <span style="background:${t.sw[2]}"></span><span style="background:${t.sw[3]}"></span>
+        </div>
+        <div class="tc-name">${t.name}</div>
+      </div>`).join('');
+      el.innerHTML=`
+        <div class="ts-section"><div class="ts-lbl">DARK<span></span></div><div class="tg">${mkRow(dark)}</div></div>
+        <div class="theme-divider"></div>
+        <div class="ts-section"><div class="ts-lbl">LIGHT<span></span></div><div class="tg">${mkRow(light)}</div></div>`;
+      el.querySelectorAll('.theme-card').forEach(c=>c.addEventListener('click',e=>{
+        e.stopPropagation(); apply(c.dataset.theme);
+        c.style.transform='scale(0.92)'; setTimeout(()=>c.style.transform='',140);
+      }));
     }
 
-    // Init after DOM ready
-    document.addEventListener('DOMContentLoaded', function() {
-      buildGrid();
-      applyTheme(currentTheme);
-
-      const picker   = document.getElementById('themePicker');
-      const themeBtn = document.getElementById('themeBtn');
-
-      themeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        picker.classList.toggle('open');
+    document.addEventListener('DOMContentLoaded',()=>{
+      build(); apply(cur);
+      const picker=document.getElementById('themePicker');
+      document.getElementById('themeBtn').addEventListener('click',e=>{
+        e.stopPropagation(); picker.classList.toggle('open');
       });
-
-      document.addEventListener('click', () => {
-        picker.classList.remove('open');
-      });
-
-      document.getElementById('themeDropdown').addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
+      document.addEventListener('click',()=>picker.classList.remove('open'));
+      document.getElementById('themeDropdown').addEventListener('click',e=>e.stopPropagation());
     });
-
-    // Expose for external use
-    window.__themeSystem = { applyTheme, THEMES };
+    window.__themeSystem={apply,THEMES,cur:()=>cur};
+    document.addEventListener('DOMContentLoaded',()=>apply(cur));
   })();
   </script>
 
